@@ -8,6 +8,41 @@
 
 ---
 
+## Active Context
+
+**Current branch:** `main`  
+**Active files:** `src/index.ts`  
+**Next immediate task:** First real route + controller pattern, request validation, basic CRUD endpoint
+
+---
+
+## Known Blockers
+
+> Things actively preventing progress. Clear these before moving on.
+
+_None currently._
+
+---
+
+## Parking Lot
+
+> Ideas, questions, and things to revisit that aren't blockers yet.
+
+- Decide between `zod` and `express-validator` for request validation (Week 1)
+- Nail down naming conventions and file structure patterns before the codebase grows
+- Look into GCP billing setup before Week 7 deployment work begins
+- Consider whether to use barrel files (`index.ts` re-exports) for cleaner imports
+
+---
+
+## Test Coverage Snapshot
+
+> Updated each session once testing begins in Week 6.
+
+_Not started yet._
+
+---
+
 ## 12-Week Plan
 
 ### Phase 1: Foundation (Weeks 1–4)

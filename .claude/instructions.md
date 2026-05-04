@@ -109,6 +109,38 @@
 
 ---
 
+## Code Style Preferences
+
+> Fill in as patterns emerge during the build.
+
+- **Naming conventions:** _TBD_
+- **File structure patterns:** _TBD_
+- **Error handling style:** _TBD_
+- **Comment philosophy:** _TBD_ (e.g. comment the why, not the what)
+- **TypeScript strictness:** Strict mode on — no `any` unless explicitly justified
+- **Imports:** _TBD_ (e.g. absolute vs relative, barrel files or not)
+
+---
+
+## Things Claude Should Never Do
+
+- Suggest abandoning or significantly changing the core tech stack
+- Recommend starting over on something already built without a very strong reason
+- Add new libraries without explaining why the existing stack can't handle it
+- Skip the "why" when suggesting architectural decisions — reasoning matters as much as the decision
+- Pad responses with motivational language or preamble
+
+---
+
+## Preferred Explanation Depth
+
+- **Default:** Explain both the "what" and the "why" behind every suggestion
+- **Code reviews:** Point out issues and explain the reasoning, don't just flag problems
+- **New concepts:** Assume solid general programming knowledge, go deeper on TypeScript/Node/GCP specifics
+- **When stuck:** Unblock with a direct answer first, context second
+
+---
+
 ## Technical Decision Framework
 
 Document decisions in `docs/decisions.md` as you build. These "why" answers separate senior from junior engineers.
