@@ -83,6 +83,7 @@
 - Skip motivational preamble — straight to substance
 - No "uh..." filler in communication practice
 - Communication style: professional but easygoing, varied vocabulary
+- Whenever a technical decision is made during a session, immediately add it to `docs/decisions.md` using the established format before moving on
 
 **Instruction updates:**
 - At the end of each substantial session, Claude produces updated versions of both `.claude/` files as downloadable artifacts
@@ -112,6 +113,8 @@
 ## Technical Decision Framework
 
 Document decisions in `docs/decisions.md` as you build. These "why" answers separate senior from junior engineers.
+
+Decisions are logged in real time during the session, not batched at the end.
 
 Format:
 > **Decision:** [what you chose]  
