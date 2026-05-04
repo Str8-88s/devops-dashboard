@@ -14,3 +14,16 @@ export async function createUser(req: Request, res: Response) {
         }
     })
 }
+
+export async function getUser(req: Request, res: Response) {
+    const { id } = req.params
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            id,
+            email: 'thomas@example.com',
+            name: 'Thomas'
+        }
+    })
+}
