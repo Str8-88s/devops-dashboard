@@ -61,3 +61,17 @@ Why: Current release; breaking API changes from v3 — use `z.email()` not `z.st
 Decision: PostgreSQL setup
 Choice: Local PostgreSQL 18 install over Prisma Postgres hosted service
 Why: Prisma Postgres v7 connection string format caused unresolved errors; local install matches Cloud SQL deployment path better and gives full control over the database
+
+---
+
+Decision: Prisma v7 client initialization
+Choice: PrismaPg adapter passed explicitly to PrismaClient constructor
+Alternatives considered: new PrismaClient() with no args (v6 style)
+Why: Prisma v7 requires an explicit database adapter — the runtime no longer handles the connection implicitly. Must install @prisma/adapter-pg and pass it via new PrismaClient({ adapter })
+
+---
+
+Decision: Prisma connection config location
+Choice: prisma.config.ts only — removed url from schema.prisma
+Alternatives considered: keeping url = env("DATABASE_URL") in schema.prisma (v6 style)
+Why: Prisma v7 removed datasource url from schema.prisma entirely. All connection configuration now lives in prisma.config.ts under the datasource.url field.
