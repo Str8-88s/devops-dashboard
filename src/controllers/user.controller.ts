@@ -78,8 +78,7 @@ export async function updateUser(req: Request, res: Response) {
 
         res.status(200).json({ status: 'success', data: user })
     } catch (err) {
-    const error = err as Prisma.PrismaClientKnownRequestError
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
             res.status(404).json({ status: 'error', message: 'User not found' })
             return
         }
@@ -96,9 +95,8 @@ export async function deleteUser(req: Request, res: Response) {
         })
 
         res.status(204).send()
-    }  catch (err) {
-    const error = err as Prisma.PrismaClientKnownRequestError
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
             res.status(404).json({ status: 'error', message: 'User not found' })
             return
         }

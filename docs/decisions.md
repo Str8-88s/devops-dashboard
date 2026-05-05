@@ -75,3 +75,15 @@ Decision: Prisma connection config location
 Choice: prisma.config.ts only — removed url from schema.prisma
 Alternatives considered: keeping url = env("DATABASE_URL") in schema.prisma (v6 style)
 Why: Prisma v7 removed datasource url from schema.prisma entirely. All connection configuration now lives in prisma.config.ts under the datasource.url field.
+
+---
+
+Decision: Password change excluded from updateUser
+Alternatives considered: Allowing password field in UpdateUserSchema
+Why: Password changes require current password verification — bundling into a generic update endpoint is a security risk. Dedicated /change-password endpoint to be added in Week 3 alongside JWT auth.
+
+---
+
+Decision: Graceful shutdown via SIGTERM
+Alternatives considered: No shutdown handler
+Why: Cloud Run sends SIGTERM before terminating containers. Disconnecting Prisma cleanly prevents connection pool issues. Low effort now, avoids production problems in Week 7.
