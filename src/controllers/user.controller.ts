@@ -27,3 +27,13 @@ export async function getUser(req: Request, res: Response) {
         }
     })
 }
+
+export const updateUser = (req: Request, res: Response): void => {
+    const { id } = req.params;
+    res.json({ message: `updateUser stub - id: ${id}`, body: req.body })
+}
+
+export const deleteUser = (req: Request, res: Response): void => {
+    const { id } = req.params;
+    res.json({ message: `deleteUser stub - id: ${id}` });
+}

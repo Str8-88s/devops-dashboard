@@ -3,7 +3,7 @@
 ## Current Status
 
 **Phase:** Phase 1 — Foundation  
-**Current Week:** Week 1 (active)  
+**Current Week:** Week 2 (active)  
 **Last Updated:** May 4, 2026
 
 ---
@@ -11,8 +11,8 @@
 ## 12-Week Plan
 
 ### Phase 1: Foundation (Weeks 1–4)
-- [ ] **Week 1:** TypeScript + Express setup, basic CRUD, request validation ← *active*
-- [ ] **Week 2:** PostgreSQL + Prisma, database schema, migrations
+- [x] **Week 1:** TypeScript + Express setup, basic CRUD, request validation
+- [ ] **Week 2:** PostgreSQL + Prisma, database schema, migrations ← *active*
 - [ ] **Week 3:** JWT authentication, password hashing, protected routes
 - [ ] **Week 4:** React + TypeScript frontend, login/register flow, routing
 
@@ -52,23 +52,33 @@
 - Installed Zod and walked through schema → middleware → controller validation pattern
 - Created `src/schemas/user.schema.ts` with `CreateUserSchema` and inferred `CreateUserInput` type
 - Created `src/middleware/validate.ts` — reusable validation middleware using `safeParse`
-- Created `src/controllers/user.controller.ts` with `createUser` and `getUser` stubs
-- Created `src/routes/user.routes.ts` — POST `/api/users` with validation, GET `/api/users/:id`
+- Created `src/controllers/user.controller.ts` with all four CRUD stubs
+- Created `src/routes/user.routes.ts` — all four CRUD routes wired up and verified
 - Registered routes in `index.ts` under `/api/users`
-- Created `docs/decisions.md` with first decision entry
-- Verified both endpoints in Thunder Client (validation errors working correctly on bad input)
-- Set up Thunder Client as preferred API testing tool (avoids PowerShell curl issues)
+- Created `docs/decisions.md` with decision entries
+- Verified all endpoints in Thunder Client (validation errors working correctly)
+- Fixed `z.Infer` → `z.infer` (capital I was deprecated)
+- Migrated from `z.string().email()` → `z.email()` (Zod v4 API change)
+- Updated `instructions.md` — decisions logged in real time during sessions
+- Installed Prisma v7 + PostgreSQL 18 locally
+- Defined User model in `schema.prisma`
+- Ran first migration (`20260505003409_init`) — User table live in database
 
 **Key concepts covered:**
 - `z.infer<typeof Schema>` — single source of truth for runtime + compile-time types
 - `safeParse` vs `parse` — never throws, lets you control the error response
 - Validation in middleware not controllers — separation of concerns
 - Never echo passwords back in responses, even in stubs
+- Zod v4 has breaking API changes from v3 — many online examples show outdated syntax
+- `.optional()` on update schemas — don't require every field, just validate what's present
+- Prisma v7 moves connection URL config out of `schema.prisma` into `prisma.config.ts`
+- Never paste `.env` contents into chat
 
-**Next session — finish Week 1:**
-- Add remaining CRUD stubs: `PUT /api/users/:id`, `DELETE /api/users/:id`
-- Wire up Prisma (Week 2 start) — swap stubs for real DB calls
-- Consider adding `nodemon` for auto-restart on file changes
+**Next session — continue Week 2:**
+- Swap controller stubs for real Prisma DB calls
+- Instantiate PrismaClient
+- Implement `createUser`, `getUser`, `updateUser`, `deleteUser` with real DB operations
+- Handle Prisma errors (unique constraint violations, not found, etc.)
 
 ---
 
@@ -85,6 +95,8 @@
 | May 4 | Validation | Zod over express-validator | TypeScript-native, inferred types, pairs naturally with Prisma |
 | May 4 | Validation placement | Middleware over controllers | Separation of concerns, reusable, controllers receive trusted data |
 | May 4 | API testing | Thunder Client over curl | Avoids PowerShell curl alias issues, lives in VS Code, saves request collections |
+| May 4 | Zod version | v4 | Current release; breaking changes from v3 — `z.email()` not `z.string().email()` |
+| May 4 | PostgreSQL setup | Local install over Prisma Postgres | Prisma Postgres v7 connection errors; local matches Cloud SQL path better |
 
 ---
 
@@ -92,7 +104,8 @@
 
 - OS: Windows (PowerShell)
 - Editor: VS Code
-- Node.js, PostgreSQL installed ✓
+- Node.js ✓
+- PostgreSQL 18 (local) ✓
 - GitHub repo: `devops-dashboard` ✓
 - Thunder Client installed ✓
 - TypeScript experience: learning as part of this project
@@ -102,6 +115,8 @@
 src/
   controllers/
     user.controller.ts
+  generated/
+    prisma/
   middleware/
     validate.ts
   routes/
@@ -109,6 +124,12 @@ src/
   schemas/
     user.schema.ts
   index.ts
+prisma/
+  migrations/
+    20260505003409_init/
+      migration.sql
+  schema.prisma
+prisma.config.ts
 docs/
   decisions.md
 .claude/

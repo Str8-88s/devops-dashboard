@@ -49,3 +49,15 @@ Why: Separation of concerns — controllers stay focused on business logic, vali
 Decision: API testing tool
 Choice: Thunder Client over curl
 Why: Avoids PowerShell curl alias issues, lives in VS Code, saves request collections for reuse across sessions
+
+---
+
+Decision: Zod version
+Choice: Zod v4
+Why: Current release; breaking API changes from v3 — use `z.email()` not `z.string().email()`, and `z.infer` not `z.Infer`. Many online examples still show v3 syntax.
+
+---
+
+Decision: PostgreSQL setup
+Choice: Local PostgreSQL 18 install over Prisma Postgres hosted service
+Why: Prisma Postgres v7 connection string format caused unresolved errors; local install matches Cloud SQL deployment path better and gives full control over the database
