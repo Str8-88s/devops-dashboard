@@ -3,12 +3,14 @@ import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import userRoutes from './routes/user.routes';
 import prisma from './lib/prisma'
+import authRoutes from './routes/auth.routes'
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use('/api/users', userRoutes)
+app.use('/api/auth', authRoutes)
 
 app.get('/health', (req: Request, res: Response) => {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });

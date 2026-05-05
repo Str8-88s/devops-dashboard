@@ -87,3 +87,24 @@ Why: Password changes require current password verification — bundling into a 
 Decision: Graceful shutdown via SIGTERM
 Alternatives considered: No shutdown handler
 Why: Cloud Run sends SIGTERM before terminating containers. Disconnecting Prisma cleanly prevents connection pool issues. Low effort now, avoids production problems in Week 7.
+
+---
+
+Decision: Access token expiry
+Choice: 15 minutes
+Alternatives considered: 1 hour, 24 hours
+Why: Short expiry limits damage from token theft. Refresh token handles seamless re-auth without user friction.
+
+---
+
+Decision: Refresh token storage
+Choice: Database (RefreshToken table) over stateless JWT-only
+Alternatives considered: Stateless refresh tokens, Redis
+Why: Database storage allows token revocation on logout. Stateless refresh tokens can't be invalidated. Redis added later in Week 10.
+
+---
+
+Decision: Auth middleware data passing
+Choice: res.locals.userId over custom Request type extension
+Alternatives considered: Extending Express Request interface with custom userId field
+Why: res.locals is the Express-idiomatic pattern for middleware-to-handler communication. Simpler for now — can migrate to typed Request extension in Week 5 when hardening.

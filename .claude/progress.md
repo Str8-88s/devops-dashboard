@@ -3,8 +3,8 @@
 ## Current Status
 
 **Phase:** Phase 1 — Foundation  
-**Current Week:** Week 2 (active)  
-**Last Updated:** May 4, 2026
+**Current Week:** Week 2 (complete)  
+**Last Updated:** May 5, 2026
 
 ---
 
@@ -12,8 +12,8 @@
 
 ### Phase 1: Foundation (Weeks 1–4)
 - [x] **Week 1:** TypeScript + Express setup, basic CRUD, request validation
-- [ ] **Week 2:** PostgreSQL + Prisma, database schema, migrations ← *active*
-- [ ] **Week 3:** JWT authentication, password hashing, protected routes
+- [x] **Week 2:** PostgreSQL + Prisma, database schema, migrations ← *complete*
+- [x] **Week 3:** JWT authentication, password hashing, protected routes
 - [ ] **Week 4:** React + TypeScript frontend, login/register flow, routing
 
 ### Phase 2: Production Quality (Weeks 5–8)
@@ -74,11 +74,81 @@
 - Prisma v7 moves connection URL config out of `schema.prisma` into `prisma.config.ts`
 - Never paste `.env` contents into chat
 
-**Next session — continue Week 2:**
-- Swap controller stubs for real Prisma DB calls
-- Instantiate PrismaClient
-- Implement `createUser`, `getUser`, `updateUser`, `deleteUser` with real DB operations
-- Handle Prisma errors (unique constraint violations, not found, etc.)
+---
+
+### Session 3 — May 5, 2026
+
+**Completed:**
+- Installed `bcrypt` + `@types/bcrypt`
+- Installed `@types/node` (fixes `process.env` TS errors)
+- Created `src/lib/prisma.ts` — singleton PrismaClient with PrismaPg adapter
+- Replaced all four CRUD stubs in `user.controller.ts` with real Prisma DB calls
+- Handled Prisma error codes: `P2002` (unique constraint) → 409, `P2025` (not found) → 404
+- Fixed `dotenv/config` import order — must be first line in `index.ts`
+- Resolved Prisma v7 breaking changes:
+  - Removed `url` from `schema.prisma` — connection config lives in `prisma.config.ts` only
+  - Prisma v7 requires explicit `PrismaPg` adapter passed to `PrismaClient` constructor
+  - Generated client entry point is `../generated/prisma/client` not `../generated/prisma`
+  - `@prisma/client/runtime/library` no longer exists in v7
+  - Installed `@prisma/adapter-pg` for local PostgreSQL connection
+- Verified full CRUD against real PostgreSQL database — 201, 409, 400, 200, 404 all working
+- Fixed cast-then-check anti-pattern in catch blocks — `instanceof` check alone is sufficient, cast is redundant
+- Fixed wrong error code in `updateUser` and `deleteUser` catch blocks (P2002 → P2025)
+- Added `SIGTERM` handler to `index.ts` for graceful Prisma disconnect
+- Added prisma import to `index.ts`
+- Excluded password from `UpdateUserSchema` — password changes require dedicated endpoint
+- Verified all Thunder Client test scenarios — 201, 409, 404, 204 all correct
+
+**Key concepts covered:**
+- Prisma v7 is a significant breaking change from v6 — adapter pattern is now required
+- `select` on every Prisma query — whitelist fields explicitly, never return password
+- `req.params as { id: string }` — route params are always strings, cast explicitly
+- Catch blocks need `err as Prisma.PrismaClientKnownRequestError` for TS type narrowing
+- Singleton PrismaClient pattern — one instance for the whole app, not per request
+- P2002 = unique constraint violation, P2025 = record not found — wrong code means 404s never fire
+- Password changes belong on a dedicated endpoint, not a generic update — security boundary
+- SIGTERM handling matters at Cloud Run deployment time, not during local dev
+
+**Before next session:**
+- Commit everything to GitHub
+
+**Next session — Week 3:**
+- JWT authentication with refresh tokens
+- Password hashing (bcrypt already installed)
+- Protected route middleware
+- Login and register endpoints
+
+---
+
+### Session 4 — May 5, 2026
+
+**Completed:**
+- Added `RefreshToken` model to `schema.prisma` with relation to `User`
+- Ran migration `20260505180615_add_refresh_tokens` — RefreshToken table live
+- Installed `jsonwebtoken` + `@types/jsonwebtoken`
+- Created `src/lib/jwt.ts` — signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken
+- Created `src/schemas/auth.schema.ts` — LoginSchema with email + password
+- Created `src/controllers/auth.controller.ts` — register, login, refresh, logout
+- Created `src/routes/auth.routes.ts` — wired up with validation middleware
+- Created `src/middleware/auth.ts` — authenticate middleware reads Bearer token, sets res.locals.userId
+- Protected user routes — GET, PUT, DELETE require valid access token
+- Fixed tsconfig.json — rootDir set to `.`, added prisma.config.ts to include, added types: ["node"]
+- Ran `npx prisma generate` after schema change to update generated client
+
+**Key concepts covered:**
+- Two token pattern — short-lived access token (15m), long-lived refresh token (7d)
+- Separate secrets for access and refresh tokens — one leak doesn't compromise both
+- Never reveal which credential failed on login — always return `Invalid credentials`
+- `res.locals.userId` — correct way to pass data from middleware to controller in Express
+- `npx prisma generate` required after every schema change, separate from migrate
+- Login schema uses `min(1)` not `min(8)` — validate presence, not policy
+
+**Next session — Week 4:**
+- React + TypeScript frontend
+- Login and register forms
+- JWT token storage and refresh logic on the client
+- Protected route components
+- React Router setup
 
 ---
 
@@ -97,6 +167,8 @@
 | May 4 | API testing | Thunder Client over curl | Avoids PowerShell curl alias issues, lives in VS Code, saves request collections |
 | May 4 | Zod version | v4 | Current release; breaking changes from v3 — `z.email()` not `z.string().email()` |
 | May 4 | PostgreSQL setup | Local install over Prisma Postgres | Prisma Postgres v7 connection errors; local matches Cloud SQL path better |
+| May 5 | Prisma v7 client init | PrismaPg adapter | v7 requires explicit adapter; `new PrismaClient()` with no args no longer works |
+| May 5 | Prisma connection config | `prisma.config.ts` only | v7 removed `url` from `schema.prisma`; all connection config lives in config file |
 
 ---
 
@@ -104,7 +176,7 @@
 
 - OS: Windows (PowerShell)
 - Editor: VS Code
-- Node.js ✓
+- Node.js v24.15.0 ✓
 - PostgreSQL 18 (local) ✓
 - GitHub repo: `devops-dashboard` ✓
 - Thunder Client installed ✓
@@ -117,6 +189,10 @@ src/
     user.controller.ts
   generated/
     prisma/
+      client.ts
+      (+ other generated files)
+  lib/
+    prisma.ts
   middleware/
     validate.ts
   routes/
