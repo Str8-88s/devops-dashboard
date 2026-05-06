@@ -2,9 +2,9 @@
 
 ## Current Status
 
-**Phase:** Phase 1 — Foundation  
-**Current Week:** Week 4 (in progress)  
-**Last Updated:** May 5, 2026
+**Phase:** Phase 2 — Production Quality
+**Current Week:** Week 5 (starting)
+**Last Updated:** May 6, 2026
 
 ---
 
@@ -12,12 +12,12 @@
 
 ### Phase 1: Foundation (Weeks 1–4)
 - [x] **Week 1:** TypeScript + Express setup, basic CRUD, request validation
-- [x] **Week 2:** PostgreSQL + Prisma, database schema, migrations ← *complete*
+- [x] **Week 2:** PostgreSQL + Prisma, database schema, migrations
 - [x] **Week 3:** JWT authentication, password hashing, protected routes
-- [ ] **Week 4:** React + TypeScript frontend, login/register flow, routing ← *in progress*
+- [x] **Week 4:** React + TypeScript frontend, login/register flow, routing ← *complete*
 
 ### Phase 2: Production Quality (Weeks 5–8)
-- [ ] **Week 5:** Error handling middleware, structured logging, input validation
+- [ ] **Week 5:** Error handling middleware, structured logging, input validation ← *next*
 - [ ] **Week 6:** Testing suite (unit, integration, component — 70%+ coverage)
 - [ ] **Week 7:** Docker + GCP Cloud Run + Cloud SQL deployment
 - [ ] **Week 8:** CI/CD pipeline with GitHub Actions, automated tests
@@ -155,12 +155,36 @@
 
 **Commit:** `feat: scaffold React frontend with login form and CORS config`
 
-**Next session — Week 4 continued:**
-- Token storage (localStorage vs memory — decision to document)
-- Auth context with React Context API or Zustand
-- Protected route component
-- Register form
-- Redirect to dashboard on successful login
+---
+
+### Session 6 — May 6, 2026
+
+**Completed:**
+- Moved refresh token from JSON response body to httpOnly cookie
+- Installed and registered `cookie-parser` on backend
+- Updated CORS config — added `credentials: true` and explicit `origin: 'http://localhost:5173'`
+- Implemented token rotation in `refresh` controller — old token deleted, new token issued and stored
+- Added `logout` controller — clears cookie, deletes token from DB
+- Built `client/src/lib/authContext.tsx` — `AuthProvider` with in-memory access token state + silent refresh on mount via `useEffect`
+- Fixed silent refresh response shape — `data.data.accessToken` not `data.accessToken`
+- Split `useAuth` hook into `client/src/lib/useAuth.ts` — fixes Vite Fast Refresh warning (components and non-component exports must be in separate files)
+- Built `client/src/components/ProtectedRoute.tsx` — redirects to `/login` if no access token; shows loading state during silent refresh
+- Built `client/src/pages/RegisterPage.tsx` — name/email/password form, posts to `/api/users`, redirects to `/login` on success
+- Added Vite proxy in `vite.config.ts` — `/api` forwarded to `localhost:3000`, removes need for hardcoded URLs
+- Updated `LoginPage.tsx` fetch URL to use `/api/auth/login` (no hardcoded host)
+- Removed StrictMode from `main.tsx` — double-fires `useEffect` in dev, consumes rotation token before second call can use it
+- Wired `RegisterPage` into `App.tsx` router
+- Full flow verified: register → login → dashboard → page refresh → stays authenticated
+
+**Key concepts covered:**
+- httpOnly cookies — not accessible via JS, eliminates XSS theft of refresh token
+- Token rotation — each refresh call consumes the old token and issues a new one; replay attacks fail
+- Silent refresh — `useEffect` on mount calls `/api/auth/refresh` before rendering protected content; `isLoading` gate prevents flash redirect
+- Vite proxy — routes `/api` through dev server, avoids CORS preflight on every request during development
+- Fast Refresh constraint — a file cannot export both a component and a non-component hook; split into separate files
+- StrictMode double-invokes effects in development — incompatible with single-use token rotation
+
+**Commit:** `feat: React frontend with auth flow, protected routes, silent refresh`
 
 ---
 
@@ -183,6 +207,10 @@
 | May 5 | Prisma connection config | `prisma.config.ts` only | v7 removed `url` from `schema.prisma`; all connection config lives in config file |
 | May 5 | Frontend scaffold | Vite + React + TypeScript | Fast dev server, first-class TS support, standard for React projects |
 | May 5 | CORS placement | Before routes in `index.ts` | Middleware runs in registration order — CORS must precede route handlers |
+| May 6 | Token storage | In-memory access token + httpOnly cookie for refresh token | Eliminates XSS exposure; httpOnly prevents JS access to refresh token |
+| May 6 | Token rotation | Delete old + issue new on every refresh | Replay attacks fail; stolen refresh token can only be used once |
+| May 6 | StrictMode | Removed during development | Double-fires useEffect in dev, breaks token rotation — revisit in Week 6 |
+| May 6 | useAuth location | Separate file from AuthProvider | Vite Fast Refresh requires components and non-component exports in separate files |
 
 ---
 
@@ -197,51 +225,3 @@
 - TypeScript experience: learning as part of this project
 
 ## File Structure (current)
-```
-src/
-  controllers/
-    auth.controller.ts
-    user.controller.ts
-  generated/
-    prisma/
-      client.ts
-      (+ other generated files)
-  lib/
-    jwt.ts
-    prisma.ts
-  middleware/
-    auth.ts
-    validate.ts
-  routes/
-    auth.routes.ts
-    user.routes.ts
-  schemas/
-    auth.schema.ts
-    user.schema.ts
-  index.ts
-client/
-  src/
-    components/
-    pages/
-      LoginPage.tsx
-    lib/
-    hooks/
-    types/
-    App.tsx
-    main.tsx
-    index.css
-  index.html
-  package.json
-  vite.config.ts
-prisma/
-  migrations/
-    20260505003409_init/
-    20260505180615_add_refresh_tokens/
-  schema.prisma
-prisma.config.ts
-docs/
-  decisions.md
-.claude/
-  instructions.md
-  progress.md
-```

@@ -122,3 +122,17 @@ Decision: CORS middleware placement
 Choice: Before routes in index.ts
 Alternatives considered: After routes
 Why: Express runs middleware in registration order — CORS headers must be set before any route handler responds
+
+---
+
+Decision: Token storage
+Choice: In-memory access token + httpOnly cookie for refresh token
+Alternatives considered: localStorage
+Why: Eliminates XSS exposure for access token. httpOnly cookie prevents JS access to refresh token. Silent refresh on mount restores session after page reload.
+
+---
+
+Decision: StrictMode
+Choice: Removed during development
+Alternatives considered: Keeping StrictMode, implementing idempotent refresh
+Why: StrictMode double-fires useEffect in dev, which consumes the refresh token on rotation before the second call can use it. Revisit in Week 6.

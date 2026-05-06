@@ -37,81 +37,104 @@ export async function register(req: Request, res: Response) {
 }
 
 export async function login(req: Request, res: Response) {
-    const { email, password } = req.body
+  const { email, password } = req.body
 
-    try {
-        const user = await prisma.user.findUnique({ where: { email } })
+  try {
+    const user = await prisma.user.findUnique({ where: { email } })
 
-        if (!user) {
-            res.status(401).json({ status: 'error', message: 'Invalid credentials' })
-            return
-        }
-
-        const valid = await bcrypt.compare(password, user.password)
-
-        if (!valid) {
-            res.status(401).json({ status: 'error', message: 'Invalid credentials' })
-            return
-        }
-
-        const accessToken = signAccessToken(user.id)
-        const refreshToken = signRefreshToken(user.id)
-
-        await prisma.refreshToken.create({
-            data: {
-                token: refreshToken,
-                userId: user.id,
-                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-            }
-        })
-
-        const { password: _, ...userWithoutPassword } = user
-
-        res.status(200).json({ status: 'success', data: { user: userWithoutPassword, accessToken, refreshToken } })
-    } catch (err) {
-        res.status(500).json({ status: 'error', message: 'Internal server error' })
+    if (!user) {
+      res.status(401).json({ status: 'error', message: 'Invalid credentials' })
+      return
     }
+
+    const valid = await bcrypt.compare(password, user.password)
+
+    if (!valid) {
+      res.status(401).json({ status: 'error', message: 'Invalid credentials' })
+      return
+    }
+
+    const accessToken = signAccessToken(user.id)
+    const refreshToken = signRefreshToken(user.id)
+
+    await prisma.refreshToken.create({
+      data: {
+        token: refreshToken,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      }
+    })
+
+    const { password: _, ...userWithoutPassword } = user
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    })
+
+    res.status(200).json({ status: 'success', data: { user: userWithoutPassword, accessToken } })
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Internal server error' })
+  }
 }
 
 export async function refresh(req: Request, res: Response) {
-    const { refreshToken } = req.body
+  const refreshToken = req.cookies.refreshToken
 
-    if (!refreshToken) {
-        res.status(400).json({ status: 'error', message: 'Refresh token required' })
-        return
+  if (!refreshToken) {
+    res.status(401).json({ status: 'error', message: 'Refresh token required' })
+    return
+  }
+
+  try {
+    const payload = verifyRefreshToken(refreshToken)
+
+    const stored = await prisma.refreshToken.findUnique({ where: { token: refreshToken } })
+
+    if (!stored || stored.expiresAt < new Date()) {
+      res.status(401).json({ status: 'error', message: 'Invalid or expired refresh token' })
+      return
     }
 
-    try {
-        const payload = verifyRefreshToken(refreshToken)
+    const accessToken = signAccessToken(payload.userId)
+    const newRefreshToken = signRefreshToken(payload.userId)
 
-        const stored = await prisma.refreshToken.findUnique({ where: { token: refreshToken } })
+    await prisma.refreshToken.delete({ where: { token: refreshToken } })
+    await prisma.refreshToken.create({
+      data: {
+        token: newRefreshToken,
+        userId: payload.userId,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      }
+    })
 
-        if (!stored || stored.expiresAt < new Date()) {
-            res.status(401).json({ status: 'error', message: 'Invalid or expired refresh token' })
-            return
-        }
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    })
 
-        const accessToken = signAccessToken(payload.userId)
-
-        res.status(200).json({ status: 'success', data: { accessToken } })
-    } catch (err) {
-        res.status(401).json({ status: 'error', message: 'Invalid or expired refresh token' })
-    }
+    res.status(200).json({ status: 'success', data: { accessToken } })
+  } catch (err) {
+    res.status(401).json({ status: 'error', message: 'Invalid or expired refresh token' })
+  }
 }
 
 export async function logout(req: Request, res: Response) {
-    const { refreshToken } = req.body
+  const refreshToken = req.cookies.refreshToken
 
-    if (!refreshToken) {
-        res.status(400).json({ status: 'error', message: 'Refresh token required' })
-        return
-    }
+  if (refreshToken) {
+    await prisma.refreshToken.deleteMany({ where: { token: refreshToken } })
+  }
 
-    try {
-        await prisma.refreshToken.delete({ where: { token: refreshToken } })
-        res.status(204).send()
-    } catch (err) {
-        // Token didn't exist — still a success from the client's perspective
-        res.status(204).send()
-    }
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  })
+
+  res.status(200).json({ status: 'success', message: 'Logged out' })
 }
