@@ -3,7 +3,7 @@
 ## Current Status
 
 **Phase:** Phase 1 — Foundation  
-**Current Week:** Week 2 (complete)  
+**Current Week:** Week 4 (in progress)  
 **Last Updated:** May 5, 2026
 
 ---
@@ -14,7 +14,7 @@
 - [x] **Week 1:** TypeScript + Express setup, basic CRUD, request validation
 - [x] **Week 2:** PostgreSQL + Prisma, database schema, migrations ← *complete*
 - [x] **Week 3:** JWT authentication, password hashing, protected routes
-- [ ] **Week 4:** React + TypeScript frontend, login/register flow, routing
+- [ ] **Week 4:** React + TypeScript frontend, login/register flow, routing ← *in progress*
 
 ### Phase 2: Production Quality (Weeks 5–8)
 - [ ] **Week 5:** Error handling middleware, structured logging, input validation
@@ -109,15 +109,6 @@
 - Password changes belong on a dedicated endpoint, not a generic update — security boundary
 - SIGTERM handling matters at Cloud Run deployment time, not during local dev
 
-**Before next session:**
-- Commit everything to GitHub
-
-**Next session — Week 3:**
-- JWT authentication with refresh tokens
-- Password hashing (bcrypt already installed)
-- Protected route middleware
-- Login and register endpoints
-
 ---
 
 ### Session 4 — May 5, 2026
@@ -143,12 +134,33 @@
 - `npx prisma generate` required after every schema change, separate from migrate
 - Login schema uses `min(1)` not `min(8)` — validate presence, not policy
 
-**Next session — Week 4:**
-- React + TypeScript frontend
-- Login and register forms
-- JWT token storage and refresh logic on the client
-- Protected route components
-- React Router setup
+---
+
+### Session 5 — May 5, 2026
+
+**Completed:**
+- Scaffolded React + TypeScript frontend using Vite (`npm create vite@latest client -- --template react-ts`)
+- Cleaned boilerplate — removed App.css, react.svg, vite.svg; emptied index.css; reset App.tsx
+- Created folder structure: `client/src/components`, `pages`, `lib`, `hooks`, `types`
+- Installed React Router (`react-router-dom`) and configured routes in `App.tsx`
+- Created `client/src/pages/LoginPage.tsx` — form with email/password fields, fetch to `/api/auth/login`
+- Fixed CORS: installed `cors` + `@types/cors` on backend; added middleware before routes in `index.ts`
+- Verified full stack login: form → Express → PostgreSQL → JWT tokens returned to browser console
+
+**Key concepts covered:**
+- CORS middleware must be registered before routes in Express — order matters
+- Vite dev server runs on 5173; backend on 3000 — two terminals required
+- CORS `credentials: true` needed when cookies or auth headers cross origins
+- 401 from backend = wrong credentials, not a CORS issue — distinct failure modes
+
+**Commit:** `feat: scaffold React frontend with login form and CORS config`
+
+**Next session — Week 4 continued:**
+- Token storage (localStorage vs memory — decision to document)
+- Auth context with React Context API or Zustand
+- Protected route component
+- Register form
+- Redirect to dashboard on successful login
 
 ---
 
@@ -169,6 +181,8 @@
 | May 4 | PostgreSQL setup | Local install over Prisma Postgres | Prisma Postgres v7 connection errors; local matches Cloud SQL path better |
 | May 5 | Prisma v7 client init | PrismaPg adapter | v7 requires explicit adapter; `new PrismaClient()` with no args no longer works |
 | May 5 | Prisma connection config | `prisma.config.ts` only | v7 removed `url` from `schema.prisma`; all connection config lives in config file |
+| May 5 | Frontend scaffold | Vite + React + TypeScript | Fast dev server, first-class TS support, standard for React projects |
+| May 5 | CORS placement | Before routes in `index.ts` | Middleware runs in registration order — CORS must precede route handlers |
 
 ---
 
@@ -186,24 +200,43 @@
 ```
 src/
   controllers/
+    auth.controller.ts
     user.controller.ts
   generated/
     prisma/
       client.ts
       (+ other generated files)
   lib/
+    jwt.ts
     prisma.ts
   middleware/
+    auth.ts
     validate.ts
   routes/
+    auth.routes.ts
     user.routes.ts
   schemas/
+    auth.schema.ts
     user.schema.ts
   index.ts
+client/
+  src/
+    components/
+    pages/
+      LoginPage.tsx
+    lib/
+    hooks/
+    types/
+    App.tsx
+    main.tsx
+    index.css
+  index.html
+  package.json
+  vite.config.ts
 prisma/
   migrations/
     20260505003409_init/
-      migration.sql
+    20260505180615_add_refresh_tokens/
   schema.prisma
 prisma.config.ts
 docs/

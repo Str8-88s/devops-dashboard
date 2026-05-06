@@ -108,3 +108,17 @@ Decision: Auth middleware data passing
 Choice: res.locals.userId over custom Request type extension
 Alternatives considered: Extending Express Request interface with custom userId field
 Why: res.locals is the Express-idiomatic pattern for middleware-to-handler communication. Simpler for now — can migrate to typed Request extension in Week 5 when hardening.
+
+---
+
+Decision: Frontend scaffold
+Choice: Vite + React + TypeScript
+Alternatives considered: Create React App
+Why: Faster dev server, first-class TS support, actively maintained — CRA is deprecated
+
+---
+
+Decision: CORS middleware placement
+Choice: Before routes in index.ts
+Alternatives considered: After routes
+Why: Express runs middleware in registration order — CORS headers must be set before any route handler responds
