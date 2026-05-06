@@ -1,40 +1,42 @@
-
 import { useState } from 'react'
-import { useAuth } from '../lib/useAuth'
 import { useNavigate } from 'react-router-dom'
 
-function LoginPage() {
+function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [error, setError] = useState('')
-  const { login } = useAuth()
   const navigate = useNavigate()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
 
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch('/api/users', {
       method: 'POST',
-      credentials: 'include', // ← needed so browser stores the cookie
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ name, email, password }),
     })
 
     const data = await res.json()
 
     if (!res.ok) {
-      setError(data.message ?? 'Login failed')
+      setError(data.message ?? 'Registration failed')
       return
     }
 
-    login(data.data.accessToken)
-    navigate('/dashboard')
+    navigate('/login')
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      <h1>Login</h1>
+      <h1>Register</h1>
+      <input
+        type="text"
+        placeholder="Name"
+        value={name}
+        onChange={e => setName(e.target.value)}
+      />
       <input
         type="email"
         placeholder="Email"
@@ -48,9 +50,9 @@ function LoginPage() {
         onChange={e => setPassword(e.target.value)}
       />
       {error && <p>{error}</p>}
-      <button type="submit">Log in</button>
+      <button type="submit">Register</button>
     </form>
   )
 }
 
-export default LoginPage
+export default RegisterPage
