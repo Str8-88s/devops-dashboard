@@ -1,20 +1,20 @@
 import { Request, Response, NextFunction } from 'express'
-import { ZodSchema, ZodError } from 'zod'
+import { ZodSchema } from 'zod'
+import { AppError } from '../lib/AppError'
 
 export function validate(schema: ZodSchema) {
-    return (req: Request, res: Response, next: NextFunction) => {
-        const result = schema.safeParse(req.body)
+  return (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.body)
 
-        if (!result.success) {
-            res.status(400).json({
-                status: 'error',
-                errors: result.error.flatten().fieldErrors
-            })
-            return
-        }
+    if (!result.success) {
+      const messages = (Object.entries(result.error.flatten().fieldErrors) as [string, string[]][])
+        .map(([field, errors]) => `${field}: ${(errors ?? []).join(', ')}`)
+        .join('; ')
 
-        //Replace req.body with the parsed, validated data
-        req.body = result.data
-        next()
+      return next(new AppError(400, messages))
     }
+
+    req.body = result.data
+    next()
+  }
 }

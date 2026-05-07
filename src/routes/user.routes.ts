@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { createUser, getUser, updateUser, deleteUser } from '../controllers/user.controller'
+import { createUser, getUserById, updateUser, deleteUser } from '../controllers/user.controller'
 import { validate } from '../middleware/validate'
 import { CreateUserSchema, UpdateUserSchema } from '../schemas/user.schema'
 import { authenticate } from '../middleware/auth'
@@ -8,7 +8,7 @@ const router = Router()
 
 
 router.post('/', validate(CreateUserSchema), createUser)
-router.get('/:id', authenticate, getUser)
+router.get('/:id', authenticate, getUserById)
 router.put('/:id', authenticate, validate(UpdateUserSchema), updateUser)
 router.delete('/:id', authenticate, deleteUser)
 
