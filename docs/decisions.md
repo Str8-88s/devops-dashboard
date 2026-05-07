@@ -136,3 +136,31 @@ Decision: StrictMode
 Choice: Removed during development
 Alternatives considered: Keeping StrictMode, implementing idempotent refresh
 Why: StrictMode double-fires useEffect in dev, which consumes the refresh token on rotation before the second call can use it. Revisit in Week 6.
+
+---
+
+Decision: Logger
+Choice: Pino over Winston
+Alternatives considered: Winston
+Why: Faster, JSON output by default, ships its own types — no @types/pino needed. pino-pretty handles human-readable dev output.
+
+---
+
+Decision: Request logging middleware
+Choice: Manual middleware over pino-http
+Alternatives considered: pino-http
+Why: pino-http v11 has type incompatibilities with commonjs + ts-node setup. Manual middleware produces identical output (method, url, statusCode, duration) with no import issues.
+
+---
+
+Decision: Error handler structure
+Choice: AppError (4xx) → logger.warn, unknown (5xx) → logger.error
+Alternatives considered: logging all errors at same level
+Why: Distinguishing client errors from server errors makes production log filtering meaningful — 4xx are expected, 5xx need immediate attention.
+
+---
+
+Decision: Validation error routing
+Choice: Zod errors flow through errorHandler via next(new AppError(400, ...))
+Alternatives considered: Responding directly in validate middleware
+Why: Consistent error shape across all failure modes — frontend always receives { error: string }. Centralized handler is the single source of truth for error responses.

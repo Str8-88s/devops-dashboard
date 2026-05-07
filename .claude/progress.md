@@ -3,8 +3,8 @@
 ## Current Status
 
 **Phase:** Phase 2 — Production Quality
-**Current Week:** Week 5 (starting)
-**Last Updated:** May 6, 2026
+**Current Week:** Week 6 (starting)
+**Last Updated:** May 7, 2026
 
 ---
 
@@ -14,11 +14,11 @@
 - [x] **Week 1:** TypeScript + Express setup, basic CRUD, request validation
 - [x] **Week 2:** PostgreSQL + Prisma, database schema, migrations
 - [x] **Week 3:** JWT authentication, password hashing, protected routes
-- [x] **Week 4:** React + TypeScript frontend, login/register flow, routing ← *complete*
+- [x] **Week 4:** React + TypeScript frontend, login/register flow, routing
 
 ### Phase 2: Production Quality (Weeks 5–8)
-- [ ] **Week 5:** Error handling middleware, structured logging, input validation ← *next*
-- [ ] **Week 6:** Testing suite (unit, integration, component — 70%+ coverage)
+- [x] **Week 5:** Error handling middleware, structured logging, input validation ← *complete*
+- [ ] **Week 6:** Testing suite (unit, integration, component — 70%+ coverage) ← *next*
 - [ ] **Week 7:** Docker + GCP Cloud Run + Cloud SQL deployment
 - [ ] **Week 8:** CI/CD pipeline with GitHub Actions, automated tests
 
@@ -85,29 +85,17 @@
 - Replaced all four CRUD stubs in `user.controller.ts` with real Prisma DB calls
 - Handled Prisma error codes: `P2002` (unique constraint) → 409, `P2025` (not found) → 404
 - Fixed `dotenv/config` import order — must be first line in `index.ts`
-- Resolved Prisma v7 breaking changes:
-  - Removed `url` from `schema.prisma` — connection config lives in `prisma.config.ts` only
-  - Prisma v7 requires explicit `PrismaPg` adapter passed to `PrismaClient` constructor
-  - Generated client entry point is `../generated/prisma/client` not `../generated/prisma`
-  - `@prisma/client/runtime/library` no longer exists in v7
-  - Installed `@prisma/adapter-pg` for local PostgreSQL connection
-- Verified full CRUD against real PostgreSQL database — 201, 409, 400, 200, 404 all working
-- Fixed cast-then-check anti-pattern in catch blocks — `instanceof` check alone is sufficient, cast is redundant
-- Fixed wrong error code in `updateUser` and `deleteUser` catch blocks (P2002 → P2025)
+- Resolved Prisma v7 breaking changes
+- Verified full CRUD against real PostgreSQL database
 - Added `SIGTERM` handler to `index.ts` for graceful Prisma disconnect
-- Added prisma import to `index.ts`
-- Excluded password from `UpdateUserSchema` — password changes require dedicated endpoint
-- Verified all Thunder Client test scenarios — 201, 409, 404, 204 all correct
+- Excluded password from `UpdateUserSchema`
 
 **Key concepts covered:**
 - Prisma v7 is a significant breaking change from v6 — adapter pattern is now required
 - `select` on every Prisma query — whitelist fields explicitly, never return password
-- `req.params as { id: string }` — route params are always strings, cast explicitly
-- Catch blocks need `err as Prisma.PrismaClientKnownRequestError` for TS type narrowing
 - Singleton PrismaClient pattern — one instance for the whole app, not per request
-- P2002 = unique constraint violation, P2025 = record not found — wrong code means 404s never fire
-- Password changes belong on a dedicated endpoint, not a generic update — security boundary
-- SIGTERM handling matters at Cloud Run deployment time, not during local dev
+- P2002 = unique constraint violation, P2025 = record not found
+- Password changes belong on a dedicated endpoint, not a generic update
 
 ---
 
@@ -115,43 +103,32 @@
 
 **Completed:**
 - Added `RefreshToken` model to `schema.prisma` with relation to `User`
-- Ran migration `20260505180615_add_refresh_tokens` — RefreshToken table live
+- Ran migration `20260505180615_add_refresh_tokens`
 - Installed `jsonwebtoken` + `@types/jsonwebtoken`
 - Created `src/lib/jwt.ts` — signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken
-- Created `src/schemas/auth.schema.ts` — LoginSchema with email + password
+- Created `src/schemas/auth.schema.ts` — LoginSchema
 - Created `src/controllers/auth.controller.ts` — register, login, refresh, logout
-- Created `src/routes/auth.routes.ts` — wired up with validation middleware
-- Created `src/middleware/auth.ts` — authenticate middleware reads Bearer token, sets res.locals.userId
-- Protected user routes — GET, PUT, DELETE require valid access token
-- Fixed tsconfig.json — rootDir set to `.`, added prisma.config.ts to include, added types: ["node"]
-- Ran `npx prisma generate` after schema change to update generated client
+- Created `src/routes/auth.routes.ts`
+- Created `src/middleware/auth.ts` — authenticate middleware
+- Protected user routes
 
 **Key concepts covered:**
 - Two token pattern — short-lived access token (15m), long-lived refresh token (7d)
-- Separate secrets for access and refresh tokens — one leak doesn't compromise both
-- Never reveal which credential failed on login — always return `Invalid credentials`
-- `res.locals.userId` — correct way to pass data from middleware to controller in Express
-- `npx prisma generate` required after every schema change, separate from migrate
-- Login schema uses `min(1)` not `min(8)` — validate presence, not policy
+- Separate secrets for access and refresh tokens
+- Never reveal which credential failed on login
+- `res.locals.userId` — correct way to pass data from middleware to controller
 
 ---
 
 ### Session 5 — May 5, 2026
 
 **Completed:**
-- Scaffolded React + TypeScript frontend using Vite (`npm create vite@latest client -- --template react-ts`)
-- Cleaned boilerplate — removed App.css, react.svg, vite.svg; emptied index.css; reset App.tsx
+- Scaffolded React + TypeScript frontend using Vite
 - Created folder structure: `client/src/components`, `pages`, `lib`, `hooks`, `types`
-- Installed React Router (`react-router-dom`) and configured routes in `App.tsx`
-- Created `client/src/pages/LoginPage.tsx` — form with email/password fields, fetch to `/api/auth/login`
-- Fixed CORS: installed `cors` + `@types/cors` on backend; added middleware before routes in `index.ts`
-- Verified full stack login: form → Express → PostgreSQL → JWT tokens returned to browser console
-
-**Key concepts covered:**
-- CORS middleware must be registered before routes in Express — order matters
-- Vite dev server runs on 5173; backend on 3000 — two terminals required
-- CORS `credentials: true` needed when cookies or auth headers cross origins
-- 401 from backend = wrong credentials, not a CORS issue — distinct failure modes
+- Installed React Router and configured routes
+- Created `LoginPage.tsx` with fetch to `/api/auth/login`
+- Fixed CORS — installed `cors` + `@types/cors`
+- Verified full stack login
 
 **Commit:** `feat: scaffold React frontend with login form and CORS config`
 
@@ -161,30 +138,45 @@
 
 **Completed:**
 - Moved refresh token from JSON response body to httpOnly cookie
-- Installed and registered `cookie-parser` on backend
-- Updated CORS config — added `credentials: true` and explicit `origin: 'http://localhost:5173'`
-- Implemented token rotation in `refresh` controller — old token deleted, new token issued and stored
-- Added `logout` controller — clears cookie, deletes token from DB
-- Built `client/src/lib/authContext.tsx` — `AuthProvider` with in-memory access token state + silent refresh on mount via `useEffect`
-- Fixed silent refresh response shape — `data.data.accessToken` not `data.accessToken`
-- Split `useAuth` hook into `client/src/lib/useAuth.ts` — fixes Vite Fast Refresh warning (components and non-component exports must be in separate files)
-- Built `client/src/components/ProtectedRoute.tsx` — redirects to `/login` if no access token; shows loading state during silent refresh
-- Built `client/src/pages/RegisterPage.tsx` — name/email/password form, posts to `/api/users`, redirects to `/login` on success
-- Added Vite proxy in `vite.config.ts` — `/api` forwarded to `localhost:3000`, removes need for hardcoded URLs
-- Updated `LoginPage.tsx` fetch URL to use `/api/auth/login` (no hardcoded host)
-- Removed StrictMode from `main.tsx` — double-fires `useEffect` in dev, consumes rotation token before second call can use it
-- Wired `RegisterPage` into `App.tsx` router
-- Full flow verified: register → login → dashboard → page refresh → stays authenticated
-
-**Key concepts covered:**
-- httpOnly cookies — not accessible via JS, eliminates XSS theft of refresh token
-- Token rotation — each refresh call consumes the old token and issues a new one; replay attacks fail
-- Silent refresh — `useEffect` on mount calls `/api/auth/refresh` before rendering protected content; `isLoading` gate prevents flash redirect
-- Vite proxy — routes `/api` through dev server, avoids CORS preflight on every request during development
-- Fast Refresh constraint — a file cannot export both a component and a non-component hook; split into separate files
-- StrictMode double-invokes effects in development — incompatible with single-use token rotation
+- Implemented token rotation in `refresh` controller
+- Built `client/src/lib/authContext.tsx` — AuthProvider with silent refresh
+- Split `useAuth` hook into separate file
+- Built `ProtectedRoute.tsx` and `RegisterPage.tsx`
+- Added Vite proxy in `vite.config.ts`
+- Removed StrictMode
 
 **Commit:** `feat: React frontend with auth flow, protected routes, silent refresh`
+
+---
+
+### Session 7 — May 7, 2026
+
+**Completed:**
+- Created `src/lib/AppError.ts` — custom error class with statusCode
+- Created `src/middleware/errorHandler.ts` — centralized error handler, `AppError` → warn, unknown → error
+- Refactored all controllers (`user.controller.ts`, `auth.controller.ts`) to use `next(err)` instead of inline error responses
+- Fixed `auth.controller.ts`: register no longer returns raw refresh token in response body (security fix)
+- Added try/catch to `logout` controller
+- Installed Pino for structured logging
+- Created `src/lib/logger.ts` — Pino logger with pino-pretty in dev, JSON in production
+- Added manual request logging middleware to `index.ts` (method, url, statusCode, duration)
+- Removed `pino-http` — v11 has type incompatibilities with commonjs + ts-node
+- Uninstalled `@types/pino`, `@types/pino-http`, `@types/pino-pretty` — version mismatch with Pino 10
+- Updated `validate.ts` — validation errors now flow through errorHandler via `next(new AppError(400, ...))`
+- Fixed `getUser` → `getUserById` naming mismatch between controller and routes
+- Fixed `deleteUser` — was incorrectly copied from `getUserById`, now calls `prisma.user.delete`
+- Fixed `SIGTEM` → `SIGTERM` typo in index.ts
+- Fixed `erasableSyntaxOnly` TS error — AppError uses explicit property declaration instead of constructor shorthand
+- Added `allowSyntheticDefaultImports` to tsconfig.json
+
+**Key concepts covered:**
+- Four-parameter signature required for Express error middleware
+- `AppError` 4xx errors → `logger.warn`; unknown 5xx errors → `logger.error`
+- `@types/pino` v6 is incompatible with pino v10 — pino ships its own types, no @types needed
+- `erasableSyntaxOnly` (set by Prisma) disallows constructor parameter property shorthand
+- Zod `fieldErrors` values typed as `unknown` — cast `Object.entries(...)` to `[string, string[]][]`
+
+**Commit:** `feat: centralized error handling and structured logging`
 
 ---
 
@@ -201,16 +193,18 @@
 | May 4 | Validation | Zod over express-validator | TypeScript-native, inferred types, pairs naturally with Prisma |
 | May 4 | Validation placement | Middleware over controllers | Separation of concerns, reusable, controllers receive trusted data |
 | May 4 | API testing | Thunder Client over curl | Avoids PowerShell curl alias issues, lives in VS Code, saves request collections |
-| May 4 | Zod version | v4 | Current release; breaking changes from v3 — `z.email()` not `z.string().email()` |
+| May 4 | Zod version | v4 | Current release; breaking changes from v3 |
 | May 4 | PostgreSQL setup | Local install over Prisma Postgres | Prisma Postgres v7 connection errors; local matches Cloud SQL path better |
-| May 5 | Prisma v7 client init | PrismaPg adapter | v7 requires explicit adapter; `new PrismaClient()` with no args no longer works |
-| May 5 | Prisma connection config | `prisma.config.ts` only | v7 removed `url` from `schema.prisma`; all connection config lives in config file |
-| May 5 | Frontend scaffold | Vite + React + TypeScript | Fast dev server, first-class TS support, standard for React projects |
-| May 5 | CORS placement | Before routes in `index.ts` | Middleware runs in registration order — CORS must precede route handlers |
-| May 6 | Token storage | In-memory access token + httpOnly cookie for refresh token | Eliminates XSS exposure; httpOnly prevents JS access to refresh token |
-| May 6 | Token rotation | Delete old + issue new on every refresh | Replay attacks fail; stolen refresh token can only be used once |
-| May 6 | StrictMode | Removed during development | Double-fires useEffect in dev, breaks token rotation — revisit in Week 6 |
+| May 5 | Prisma v7 client init | PrismaPg adapter | v7 requires explicit adapter |
+| May 5 | Prisma connection config | `prisma.config.ts` only | v7 removed `url` from `schema.prisma` |
+| May 5 | Frontend scaffold | Vite + React + TypeScript | Fast dev server, first-class TS support |
+| May 5 | CORS placement | Before routes in `index.ts` | Middleware runs in registration order |
+| May 6 | Token storage | In-memory access token + httpOnly cookie for refresh token | Eliminates XSS exposure |
+| May 6 | Token rotation | Delete old + issue new on every refresh | Replay attacks fail |
+| May 6 | StrictMode | Removed during development | Double-fires useEffect in dev, breaks token rotation |
 | May 6 | useAuth location | Separate file from AuthProvider | Vite Fast Refresh requires components and non-component exports in separate files |
+| May 7 | Logger | Pino over Winston | Faster, JSON by default, ships own types |
+| May 7 | Request logging | Manual middleware over pino-http | pino-http v11 type incompatibility with commonjs + ts-node |
 
 ---
 
@@ -225,3 +219,46 @@
 - TypeScript experience: learning as part of this project
 
 ## File Structure (current)
+
+```
+devops-dashboard/
+├── src/
+│   ├── controllers/
+│   │   ├── auth.controller.ts
+│   │   └── user.controller.ts
+│   ├── lib/
+│   │   ├── AppError.ts
+│   │   ├── jwt.ts
+│   │   ├── logger.ts
+│   │   └── prisma.ts
+│   ├── middleware/
+│   │   ├── auth.ts
+│   │   ├── errorHandler.ts
+│   │   └── validate.ts
+│   ├── routes/
+│   │   ├── auth.routes.ts
+│   │   └── user.routes.ts
+│   ├── schemas/
+│   │   ├── auth.schema.ts
+│   │   └── user.schema.ts
+│   └── index.ts
+├── client/
+│   └── src/
+│       ├── components/
+│       │   └── ProtectedRoute.tsx
+│       ├── lib/
+│       │   ├── authContext.tsx
+│       │   └── useAuth.ts
+│       ├── pages/
+│       │   ├── LoginPage.tsx
+│       │   └── RegisterPage.tsx
+│       └── App.tsx
+├── prisma/
+│   └── schema.prisma
+├── docs/
+│   └── decisions.md
+├── .claude/
+│   ├── instructions.md
+│   └── progress.md
+└── prisma.config.ts
+```
