@@ -199,3 +199,10 @@ Decision: Refresh token uniqueness
 Choice: jti: randomUUID() added to signRefreshToken payload
 Alternatives considered: Relying on iat (issued-at) claim alone
 Why: JWT iat is in seconds — two tokens signed for the same user within the same second produce identical token strings, causing unique constraint violations in the RefreshToken table. jti guarantees uniqueness regardless of timing.
+
+---
+
+Decision: Production database
+Choice: Supabase over Cloud SQL
+Alternatives considered: GCP Cloud SQL
+Why: Cloud SQL costs ~$12-15/month even at idle. Supabase free tier is generous and also PostgreSQL — zero refactoring required since Prisma abstracts the connection. Cloud Run still on GCP for the resume signal.

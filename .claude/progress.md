@@ -3,8 +3,9 @@
 ## Current Status
 
 **Phase:** Phase 2 — Production Quality
-**Current Week:** Week 6 (starting)
-**Last Updated:** May 7, 2026
+**Current Week:** Week 7 (starting)
+**Last Updated:** May 10, 2026
+**Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) — zero cost stack
 
 ---
 
@@ -17,9 +18,9 @@
 - [x] **Week 4:** React + TypeScript frontend, login/register flow, routing
 
 ### Phase 2: Production Quality (Weeks 5–8)
-- [x] **Week 5:** Error handling middleware, structured logging, input validation ← *complete*
-- [ ] **Week 6:** Testing suite (unit, integration, component — 70%+ coverage) ← *next*
-- [ ] **Week 7:** Docker + GCP Cloud Run + Cloud SQL deployment
+- [x] **Week 5:** Error handling middleware, structured logging, input validation
+- [x] **Week 6:** Testing suite (unit, integration, component — 70%+ coverage) ← *complete*
+- [ ] **Week 7:** Docker + GCP Cloud Run + Supabase deployment ← *next*
 - [ ] **Week 8:** CI/CD pipeline with GitHub Actions, automated tests
 
 ### Phase 3: Advanced Features (Weeks 9–12)
@@ -180,6 +181,38 @@
 
 ---
 
+### Session 8 — May 10, 2026
+
+**Completed:**
+- Installed Jest 29 + ts-jest 29 + @types/jest 29 + supertest
+- Created `jest.config.js` with `--runInBand`
+- Created test database `devops_dashboard_test`; migrations applied via `migrate:test` script
+- Updated `prisma.ts` to switch DB connection based on `NODE_ENV`
+- Split `src/index.ts` into `src/app.ts` (Express setup) + `src/index.ts` (listen + SIGTERM)
+- Created `src/__tests__/setup.ts` — Prisma disconnect after all tests
+- Created `src/__tests__/auth.test.ts` — 10 tests covering register, login, refresh, logout
+- Created `src/__tests__/user.test.ts` — 11 tests covering full user CRUD with auth
+- Fixed parallel execution failures with `--runInBand` on all test scripts
+- Fixed identical refresh token bug — added `jti: randomUUID()` to `signRefreshToken`
+- Final coverage: **94.71% statements, 88.57% branches**
+- 21/21 tests passing
+- Decided on deployment stack: Cloud Run (GCP) + Supabase (PostgreSQL) — zero ongoing cost
+
+**Key concepts covered:**
+- Test DB isolation via `NODE_ENV=test` — never run tests against dev DB
+- `--runInBand` forces serial execution — prevents cross-suite DB race conditions
+- JWT tokens signed within the same second produce identical values without `jti`
+- Supertest requires app/server split — `app.ts` exports Express instance, `index.ts` calls `listen()`
+- Each describe block needs its own `beforeEach` if it requires a user to exist
+- `@types/jest` must match Jest major version exactly
+- ts-jest 29 is not compatible with Jest 30 — downgrade all three packages together
+
+**Commits:**
+- `feat: integration test suite with 94% coverage`
+- `chore: update deployment strategy — Cloud Run + Supabase`
+
+---
+
 ## Technical Decisions Log
 
 | Date | Decision | Choice | Why |
@@ -192,9 +225,9 @@
 | May 3 | Context mgmt | `.claude/` folder in repo | Version-controlled, no copy-paste, split stable vs active |
 | May 4 | Validation | Zod over express-validator | TypeScript-native, inferred types, pairs naturally with Prisma |
 | May 4 | Validation placement | Middleware over controllers | Separation of concerns, reusable, controllers receive trusted data |
-| May 4 | API testing | Thunder Client over curl | Avoids PowerShell curl alias issues, lives in VS Code, saves request collections |
+| May 4 | API testing | Thunder Client over curl | Avoids PowerShell curl alias issues, lives in VS Code |
 | May 4 | Zod version | v4 | Current release; breaking changes from v3 |
-| May 4 | PostgreSQL setup | Local install over Prisma Postgres | Prisma Postgres v7 connection errors; local matches Cloud SQL path better |
+| May 4 | PostgreSQL setup | Local install over Prisma Postgres | Prisma Postgres v7 connection errors; local matches Cloud SQL path |
 | May 5 | Prisma v7 client init | PrismaPg adapter | v7 requires explicit adapter |
 | May 5 | Prisma connection config | `prisma.config.ts` only | v7 removed `url` from `schema.prisma` |
 | May 5 | Frontend scaffold | Vite + React + TypeScript | Fast dev server, first-class TS support |
@@ -205,6 +238,12 @@
 | May 6 | useAuth location | Separate file from AuthProvider | Vite Fast Refresh requires components and non-component exports in separate files |
 | May 7 | Logger | Pino over Winston | Faster, JSON by default, ships own types |
 | May 7 | Request logging | Manual middleware over pino-http | pino-http v11 type incompatibility with commonjs + ts-node |
+| May 10 | Test runner | Jest 29 + ts-jest 29 | ts-jest 29 not compatible with Jest 30; versions must match exactly |
+| May 10 | Test execution | `--runInBand` | Prevents cross-suite DB race conditions on shared test database |
+| May 10 | Test DB | Separate `devops_dashboard_test` | Isolates test data from dev; NODE_ENV=test switches connection string |
+| May 10 | App/server split | `app.ts` + `index.ts` | Supertest needs importable app without starting the HTTP server |
+| May 10 | Refresh token uniqueness | `jti: randomUUID()` | Tokens signed same second produce identical strings without jti |
+| May 10 | Production database | Supabase over Cloud SQL | Cloud SQL costs ~$12-15/month at idle; Supabase is free PostgreSQL — zero refactoring required |
 
 ---
 
@@ -223,6 +262,10 @@
 ```
 devops-dashboard/
 ├── src/
+│   ├── __tests__/
+│   │   ├── auth.test.ts
+│   │   ├── user.test.ts
+│   │   └── setup.ts
 │   ├── controllers/
 │   │   ├── auth.controller.ts
 │   │   └── user.controller.ts
@@ -241,6 +284,7 @@ devops-dashboard/
 │   ├── schemas/
 │   │   ├── auth.schema.ts
 │   │   └── user.schema.ts
+│   ├── app.ts
 │   └── index.ts
 ├── client/
 │   └── src/
@@ -260,5 +304,6 @@ devops-dashboard/
 ├── .claude/
 │   ├── instructions.md
 │   └── progress.md
+├── jest.config.js
 └── prisma.config.ts
 ```
