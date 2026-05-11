@@ -164,3 +164,38 @@ Decision: Validation error routing
 Choice: Zod errors flow through errorHandler via next(new AppError(400, ...))
 Alternatives considered: Responding directly in validate middleware
 Why: Consistent error shape across all failure modes — frontend always receives { error: string }. Centralized handler is the single source of truth for error responses.
+
+---
+
+Decision: Test runner version
+Choice: Jest 29 + ts-jest 29 + @types/jest 29
+Alternatives considered: Jest 30 (latest)
+Why: ts-jest 29 is not compatible with Jest 30. All three packages must match major version exactly or type definitions break.
+
+---
+
+Decision: Test execution mode
+Choice: --runInBand flag on all test scripts
+Alternatives considered: Default parallel execution
+Why: Parallel test suites share the same PostgreSQL test database — concurrent deleteMany/create calls cause foreign key violations and race conditions. Serial execution eliminates this entirely.
+
+---
+
+Decision: Test database
+Choice: Separate devops_dashboard_test database
+Alternatives considered: Same dev database, SQLite in-memory
+Why: Keeps test data completely isolated from dev data. Matches Cloud SQL deployment path better than SQLite. NODE_ENV=test in prisma.ts switches the connection string automatically.
+
+---
+
+Decision: App/server split
+Choice: src/app.ts (Express setup) + src/index.ts (listen + SIGTERM)
+Alternatives considered: Single index.ts file
+Why: Supertest needs to import the Express app without starting the HTTP server. Splitting allows tests to import app directly while production entry point remains index.ts.
+
+---
+
+Decision: Refresh token uniqueness
+Choice: jti: randomUUID() added to signRefreshToken payload
+Alternatives considered: Relying on iat (issued-at) claim alone
+Why: JWT iat is in seconds — two tokens signed for the same user within the same second produce identical token strings, causing unique constraint violations in the RefreshToken table. jti guarantees uniqueness regardless of timing.

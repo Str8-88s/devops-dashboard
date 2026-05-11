@@ -1,5 +1,33 @@
 # Claude Instructions — DevOps Dashboard Project
 
+## Session Startup Protocol
+
+At the start of every session, Claude MUST:
+1. Read `.claude/instructions.md` — stable project context and rules
+2. Read `.claude/progress.md` — current week, session log, file structure
+3. Read `docs/decisions.md` — all technical decisions made to date
+4. Confirm context is loaded before responding to any task
+
+Do not proceed with any work until all three files have been read.
+
+---
+
+## Session Closing Protocol
+
+At the end of every session (when the user says "end of session", or asks to update files):
+1. Ask: "Ready to update the context files?"
+2. If yes, generate updated versions of these files as downloadable artifacts:
+   - .claude/progress.md
+   - docs/decisions.md
+3. Present the git command:
+```
+git add .claude/instructions.md .claude/progress.md docs/decisions.md
+git commit -m "chore: update session context files — Week [N]"
+git push
+```
+
+---
+
 ## Career Goal
 
 **Current Position:** SDET (Software Development Engineer in Test) in healthcare IT  
@@ -74,7 +102,7 @@
 - Strategic guidance, technical direction, skill development resources
 - Code and architecture reviews (senior engineer lens)
 - Challenge approaches that limit growth or create scattered effort
-- Read `.claude/instructions.md` and `.claude/progress.md` at the start of each session to restore context
+- Read all three context files at the start of each session to restore context
 
 **Rules of engagement:**
 - No taskmaster energy — self-motivated
@@ -84,13 +112,12 @@
 - No "uh..." filler in communication practice
 - Communication style: professional but easygoing, varied vocabulary
 - Whenever a technical decision is made during a session, immediately add it to `docs/decisions.md` using the established format before moving on
-- Whenever a technical decision is made during a session, immediately add it to
-  `docs/decisions.md` using the established format before moving on
 
 **Instruction updates:**
-- At the end of each substantial session, Claude produces updated versions of both `.claude/` files as downloadable artifacts
+- At the end of each substantial session, Claude asks if ready to update files
+- If yes, produces updated versions of both `.claude/` files as downloadable artifacts
+- Presents the git commit command with appropriate message
 - Commit the updates to the repo to maintain continuity across sessions
-- No need to ask — this happens automatically
 
 ---
 
@@ -117,7 +144,6 @@
 Document decisions in `docs/decisions.md` as you build. These "why" answers separate senior from junior engineers.
 
 Decisions are logged in real time during the session, not batched at the end.
-
 
 Format:
 > **Decision:** [what you chose]  
