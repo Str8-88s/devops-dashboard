@@ -3,9 +3,10 @@
 ## Current Status
 
 **Phase:** Phase 2 — Production Quality
-**Current Week:** Week 7 (starting)
-**Last Updated:** May 10, 2026
+**Current Week:** Week 8 (starting)
+**Last Updated:** May 13, 2026
 **Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) — zero cost stack
+**Production URL:** https://devops-dashboard-985792054692.us-east1.run.app
 
 ---
 
@@ -19,9 +20,9 @@
 
 ### Phase 2: Production Quality (Weeks 5–8)
 - [x] **Week 5:** Error handling middleware, structured logging, input validation
-- [x] **Week 6:** Testing suite (unit, integration, component — 70%+ coverage) ← *complete*
-- [ ] **Week 7:** Docker + GCP Cloud Run + Supabase deployment ← *next*
-- [ ] **Week 8:** CI/CD pipeline with GitHub Actions, automated tests
+- [x] **Week 6:** Testing suite (unit, integration, component — 70%+ coverage)
+- [x] **Week 7:** Docker + GCP Cloud Run + Supabase deployment ← *complete*
+- [ ] **Week 8:** CI/CD pipeline with GitHub Actions, automated tests ← *next*
 
 ### Phase 3: Advanced Features (Weeks 9–12)
 - [ ] **Week 9:** WebSocket server, real-time dashboard updates
@@ -154,28 +155,11 @@
 
 **Completed:**
 - Created `src/lib/AppError.ts` — custom error class with statusCode
-- Created `src/middleware/errorHandler.ts` — centralized error handler, `AppError` → warn, unknown → error
-- Refactored all controllers (`user.controller.ts`, `auth.controller.ts`) to use `next(err)` instead of inline error responses
-- Fixed `auth.controller.ts`: register no longer returns raw refresh token in response body (security fix)
-- Added try/catch to `logout` controller
+- Created `src/middleware/errorHandler.ts` — centralized error handler
+- Refactored all controllers to use `next(err)` instead of inline error responses
 - Installed Pino for structured logging
 - Created `src/lib/logger.ts` — Pino logger with pino-pretty in dev, JSON in production
-- Added manual request logging middleware to `index.ts` (method, url, statusCode, duration)
-- Removed `pino-http` — v11 has type incompatibilities with commonjs + ts-node
-- Uninstalled `@types/pino`, `@types/pino-http`, `@types/pino-pretty` — version mismatch with Pino 10
-- Updated `validate.ts` — validation errors now flow through errorHandler via `next(new AppError(400, ...))`
-- Fixed `getUser` → `getUserById` naming mismatch between controller and routes
-- Fixed `deleteUser` — was incorrectly copied from `getUserById`, now calls `prisma.user.delete`
-- Fixed `SIGTEM` → `SIGTERM` typo in index.ts
-- Fixed `erasableSyntaxOnly` TS error — AppError uses explicit property declaration instead of constructor shorthand
-- Added `allowSyntheticDefaultImports` to tsconfig.json
-
-**Key concepts covered:**
-- Four-parameter signature required for Express error middleware
-- `AppError` 4xx errors → `logger.warn`; unknown 5xx errors → `logger.error`
-- `@types/pino` v6 is incompatible with pino v10 — pino ships its own types, no @types needed
-- `erasableSyntaxOnly` (set by Prisma) disallows constructor parameter property shorthand
-- Zod `fieldErrors` values typed as `unknown` — cast `Object.entries(...)` to `[string, string[]][]`
+- Added manual request logging middleware to `index.ts`
 
 **Commit:** `feat: centralized error handling and structured logging`
 
@@ -185,31 +169,48 @@
 
 **Completed:**
 - Installed Jest 29 + ts-jest 29 + @types/jest 29 + supertest
-- Created `jest.config.js` with `--runInBand`
-- Created test database `devops_dashboard_test`; migrations applied via `migrate:test` script
-- Updated `prisma.ts` to switch DB connection based on `NODE_ENV`
-- Split `src/index.ts` into `src/app.ts` (Express setup) + `src/index.ts` (listen + SIGTERM)
-- Created `src/__tests__/setup.ts` — Prisma disconnect after all tests
-- Created `src/__tests__/auth.test.ts` — 10 tests covering register, login, refresh, logout
-- Created `src/__tests__/user.test.ts` — 11 tests covering full user CRUD with auth
-- Fixed parallel execution failures with `--runInBand` on all test scripts
-- Fixed identical refresh token bug — added `jti: randomUUID()` to `signRefreshToken`
+- Created test database `devops_dashboard_test`; migrations applied
+- Split `src/index.ts` into `src/app.ts` + `src/index.ts`
+- Created auth and user integration test suites — 21/21 tests passing
 - Final coverage: **94.71% statements, 88.57% branches**
-- 21/21 tests passing
-- Decided on deployment stack: Cloud Run (GCP) + Supabase (PostgreSQL) — zero ongoing cost
-
-**Key concepts covered:**
-- Test DB isolation via `NODE_ENV=test` — never run tests against dev DB
-- `--runInBand` forces serial execution — prevents cross-suite DB race conditions
-- JWT tokens signed within the same second produce identical values without `jti`
-- Supertest requires app/server split — `app.ts` exports Express instance, `index.ts` calls `listen()`
-- Each describe block needs its own `beforeEach` if it requires a user to exist
-- `@types/jest` must match Jest major version exactly
-- ts-jest 29 is not compatible with Jest 30 — downgrade all three packages together
+- Decided on deployment stack: Cloud Run (GCP) + Supabase (PostgreSQL)
 
 **Commits:**
 - `feat: integration test suite with 94% coverage`
 - `chore: update deployment strategy — Cloud Run + Supabase`
+
+---
+
+### Session 9 — May 13, 2026
+
+**Completed:**
+- Created Supabase project (East US - Ohio region)
+- Applied Prisma migrations to Supabase via session pooler (`migrate deploy`)
+- Verified `User` and `RefreshToken` tables live in Supabase
+- Installed Docker Desktop (v29.4.3)
+- Wrote `Dockerfile` (node:20-alpine, production build)
+- Wrote `.dockerignore`
+- Fixed `tsconfig.json` — set `rootDir: ./src`, `outDir: ./dist` so compiled output lands directly in `dist/` not `dist/src/`
+- Built Docker image successfully
+- Tested container locally — `/health` returned healthy
+- Installed and configured `gcloud` CLI (SDK 568.0.0)
+- Enabled Cloud Run + Artifact Registry APIs
+- Created Artifact Registry repository (`devops-dashboard`, us-east1)
+- Tagged and pushed Docker image to Artifact Registry
+- Deployed to Cloud Run — **app live at https://devops-dashboard-985792054692.us-east1.run.app**
+- Verified `/health` endpoint returning `{"status":"healthy"}` from production
+
+**Key concepts covered:**
+- `migrate deploy` vs `migrate dev` — deploy is production-safe, applies existing migrations only
+- Supabase direct connections use IPv6 by default — use session pooler for IPv4 environments
+- Session pooler vs transaction pooler — session maintains persistent connections, compatible with Prisma; transaction pooler breaks prepared statements
+- Percent-encode special characters in database URLs (`@` → `%40`)
+- Docker image maps `dist/` not `src/` — container runs compiled JS
+- Cloud Run injects `PORT=8080` at runtime — code must read `process.env.PORT`
+- `docker tag` + `docker push` to Artifact Registry before `gcloud run deploy`
+- `--allow-unauthenticated` flag required for public API access on Cloud Run
+
+**Commit:** `feat: dockerize backend for Cloud Run deployment`
 
 ---
 
@@ -243,7 +244,10 @@
 | May 10 | Test DB | Separate `devops_dashboard_test` | Isolates test data from dev; NODE_ENV=test switches connection string |
 | May 10 | App/server split | `app.ts` + `index.ts` | Supertest needs importable app without starting the HTTP server |
 | May 10 | Refresh token uniqueness | `jti: randomUUID()` | Tokens signed same second produce identical strings without jti |
-| May 10 | Production database | Supabase over Cloud SQL | Cloud SQL costs ~$12-15/month at idle; Supabase is free PostgreSQL — zero refactoring required |
+| May 10 | Production database | Supabase over Cloud SQL | Cloud SQL costs ~$12-15/month at idle; Supabase is free PostgreSQL |
+| May 13 | Supabase connection method | Session pooler over direct | Direct uses IPv6 by default; session pooler works over IPv4, compatible with Prisma |
+| May 13 | Docker base image | node:20-alpine | Minimal image size, LTS Node version |
+| May 13 | tsconfig outDir | `./dist` with `rootDir: ./src` | Ensures compiled output lands directly in dist/ not dist/src/ |
 
 ---
 
@@ -253,8 +257,13 @@
 - Editor: VS Code
 - Node.js v24.15.0 ✓
 - PostgreSQL 18 (local) ✓
+- Docker Desktop v29.4.3 ✓
+- gcloud CLI SDK 568.0.0 ✓
 - GitHub repo: `devops-dashboard` ✓
 - Thunder Client installed ✓
+- GCP Project: `project-21878190-6e72-4ba8-bcc`
+- Artifact Registry: `us-east1-docker.pkg.dev/project-21878190-6e72-4ba8-bcc/devops-dashboard`
+- Production URL: `https://devops-dashboard-985792054692.us-east1.run.app`
 - TypeScript experience: learning as part of this project
 
 ## File Structure (current)
@@ -299,11 +308,15 @@ devops-dashboard/
 │       └── App.tsx
 ├── prisma/
 │   └── schema.prisma
+├── dist/
+│   (compiled output — gitignored)
 ├── docs/
 │   └── decisions.md
 ├── .claude/
 │   ├── instructions.md
 │   └── progress.md
+├── Dockerfile
+├── .dockerignore
 ├── jest.config.js
 └── prisma.config.ts
 ```

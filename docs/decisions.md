@@ -206,3 +206,24 @@ Decision: Production database
 Choice: Supabase over Cloud SQL
 Alternatives considered: GCP Cloud SQL
 Why: Cloud SQL costs ~$12-15/month even at idle. Supabase free tier is generous and also PostgreSQL — zero refactoring required since Prisma abstracts the connection. Cloud Run still on GCP for the resume signal.
+
+---
+
+Decision: Supabase connection method
+Choice: Session pooler over direct connection
+Alternatives considered: Direct connection (IPv6), Transaction pooler
+Why: Supabase direct connections use IPv6 by default — incompatible with IPv4-only environments like local Windows machines. Transaction pooler breaks Prisma prepared statements. Session pooler maintains persistent connections over IPv4 and is fully Prisma-compatible.
+
+---
+
+Decision: Docker base image
+Choice: node:20-alpine
+Alternatives considered: node:20, node:22-alpine
+Why: Alpine minimizes image size. LTS Node 20 is stable and well-supported. Smaller images mean faster Cloud Run cold starts.
+
+---
+
+Decision: tsconfig outDir/rootDir
+Choice: rootDir: ./src, outDir: ./dist
+Alternatives considered: Default (no rootDir set)
+Why: Without explicit rootDir, tsc nests output under dist/src/ instead of dist/. Dockerfile copies dist/ directly — nested output breaks the container entrypoint.
