@@ -227,3 +227,17 @@ Decision: tsconfig outDir/rootDir
 Choice: rootDir: ./src, outDir: ./dist
 Alternatives considered: Default (no rootDir set)
 Why: Without explicit rootDir, tsc nests output under dist/src/ instead of dist/. Dockerfile copies dist/ directly — nested output breaks the container entrypoint.
+
+---
+
+Decision: CI/CD GCP authentication
+Choice: Workload Identity Federation over service account JSON key
+Alternatives considered: Service account JSON key stored in GitHub Secrets
+Why: GCP org policy blocked key creation. WIF is also the better approach — GitHub Actions proves identity via short-lived OIDC token, no long-lived credentials stored anywhere.
+
+---
+
+Decision: Dockerfile build strategy
+Choice: Build TypeScript inside the Docker image
+Alternatives considered: Pre-building locally and copying dist/ into image
+Why: dist/ is gitignored and won't exist in CI. Building inside the image ensures the container is always built from source and is fully self-contained.

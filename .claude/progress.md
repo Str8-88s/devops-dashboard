@@ -3,8 +3,8 @@
 ## Current Status
 
 **Phase:** Phase 2 — Production Quality
-**Current Week:** Week 8 (starting)
-**Last Updated:** May 13, 2026
+**Current Week:** Week 9 (starting)
+**Last Updated:** May 16, 2026
 **Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) — zero cost stack
 **Production URL:** https://devops-dashboard-985792054692.us-east1.run.app
 
@@ -21,11 +21,11 @@
 ### Phase 2: Production Quality (Weeks 5–8)
 - [x] **Week 5:** Error handling middleware, structured logging, input validation
 - [x] **Week 6:** Testing suite (unit, integration, component — 70%+ coverage)
-- [x] **Week 7:** Docker + GCP Cloud Run + Supabase deployment ← *complete*
-- [ ] **Week 8:** CI/CD pipeline with GitHub Actions, automated tests ← *next*
+- [x] **Week 7:** Docker + GCP Cloud Run + Supabase deployment
+- [x] **Week 8:** CI/CD pipeline with GitHub Actions, automated tests
 
 ### Phase 3: Advanced Features (Weeks 9–12)
-- [ ] **Week 9:** WebSocket server, real-time dashboard updates
+- [ ] **Week 9:** WebSocket server, real-time dashboard updates ← *next*
 - [ ] **Week 10:** Redis caching, query optimization, performance tuning
 - [ ] **Week 11:** Monitoring, health checks, error tracking, observability
 - [ ] **Week 12:** Docs, ADRs, API docs, technical blog post
@@ -181,6 +181,30 @@
 
 ---
 
+### Session 10 — May 16, 2026
+
+**Completed:**
+- Fixed git config email (was set to placeholder `any@email.com`)
+- Set up GCP Workload Identity Federation for GitHub Actions (no long-lived service account keys)
+- Created `github-actions` service account with Artifact Registry writer + Cloud Run admin + service account user roles
+- Added `GCP_WORKLOAD_IDENTITY_PROVIDER` and `GCP_SERVICE_ACCOUNT` to GitHub Secrets
+- Wrote `.github/workflows/deploy.yml` — test job + deploy job, deploy gated on tests passing
+- Fixed CI issues: added `prisma generate` step, typed catch parameters as `unknown`, removed `src` from `.dockerignore`, removed `prisma.config.ts` from tsconfig include
+- Updated Dockerfile to build TypeScript inside the container (`npm run build` in image)
+- Rewrote `prisma.config.js` to use `module.exports` instead of `exports.default`
+- Removed `github-actions-key.json` from git tracking, added to `.gitignore`
+- Pipeline fully green — Test ✅ Deploy ✅ in 2m 42s
+
+**Key concepts covered:**
+- Workload Identity Federation — short-lived OIDC tokens instead of long-lived service account keys
+- Docker images are immutable snapshots tagged by commit SHA — enables instant rollbacks
+- Artifact Registry stores every image ever built — full deploy history
+- CI PostgreSQL service containers spin up fresh for each run, torn down after
+- `prisma generate` must run in CI before type check — generated client isn't committed to repo
+- `exports.default` vs `module.exports` — Prisma config requires the latter for CommonJS
+
+---
+
 ### Session 9 — May 13, 2026
 
 **Completed:**
@@ -248,6 +272,8 @@
 | May 13 | Supabase connection method | Session pooler over direct | Direct uses IPv6 by default; session pooler works over IPv4, compatible with Prisma |
 | May 13 | Docker base image | node:20-alpine | Minimal image size, LTS Node version |
 | May 13 | tsconfig outDir | `./dist` with `rootDir: ./src` | Ensures compiled output lands directly in dist/ not dist/src/ |
+| May 16 | CI/CD auth | Workload Identity Federation over service account JSON key | Org policy blocked key creation; WIF is more secure anyway — no long-lived credentials |
+| May 16 | Dockerfile build | Build TypeScript inside Docker over pre-building locally | Ensures image is always built from source; no dependency on local dist/ |
 
 ---
 
