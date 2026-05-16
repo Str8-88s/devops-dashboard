@@ -26,7 +26,7 @@ import { AppError } from '../lib/AppError';
         })
 
         res.status(201).json({ status: 'success', data: user })
-    } catch (err) {
+    } catch (err: unknown) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         return next(new AppError(409, 'Email already in use'))
         }
@@ -38,7 +38,7 @@ import { AppError } from '../lib/AppError';
         const { id } = req.params as { id: string };
         const user = await prisma.user.findUniqueOrThrow({ where: { id } });
         res.json({ data: user });
-    } catch (err) {
+    } catch (err: unknown) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
         return next(new AppError(404, 'User not found'));
         }
@@ -62,7 +62,7 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
             }
         })
         res.json({ data: user });
-    } catch (err) {
+    } catch (err: unknown) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
         return next(new AppError(404, 'User not found'));
         }
@@ -75,7 +75,7 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
         const { id } = req.params as { id: string }
         await prisma.user.delete({ where: { id } })
         res.status(204).send()
-    } catch (err) {
+    } catch (err: unknown) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
         return next(new AppError(404, 'User not found'))
         }

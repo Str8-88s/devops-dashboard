@@ -27,7 +27,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
     })
 
     res.status(201).json({ status: 'success', data: { user, accessToken } })
-  } catch (err) {
+  } catch (err: unknown) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       return next(new AppError(409, 'Email already in use'))
     }
@@ -72,7 +72,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     })
 
     res.status(200).json({ status: 'success', data: { user: userWithoutPassword, accessToken } })
-  } catch (err) {
+  } catch (err: unknown) {
     next(err)
   }
 }
@@ -113,7 +113,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction) {
     })
 
     res.status(200).json({ status: 'success', data: { accessToken } })
-  } catch (err) {
+  } catch (err: unknown) {
     // verifyRefreshToken throws on malformed/expired token
     next(new AppError(401, 'Invalid or expired refresh token'))
   }
@@ -134,7 +134,7 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
     })
 
     res.status(200).json({ status: 'success', message: 'Logged out' })
-  } catch (err) {
+  } catch (err: unknown) {
     next(err)
   }
 }
