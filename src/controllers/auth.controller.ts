@@ -4,9 +4,13 @@ import prisma from '../lib/prisma'
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../lib/jwt'
 import { Prisma } from '../generated/prisma/client'
 import { AppError } from '../lib/AppError';
+import { io } from '../lib/socket';
+import { rateLimitByIp } from '../lib/rateLimiter';
 
 export async function register(req: Request, res: Response, next: NextFunction) {
+  console.log('register controller hit')
   try {
+    await rateLimitByIp(req.ip ?? 'unknown', 'register');
     const { email, password, name } = req.body
     const hashedPassword = await bcrypt.hash(password, 10)
 
@@ -26,6 +30,14 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       }
     })
 
+    console.log('about to emit')
+    io.emit('activity', {
+      type: 'user:registered',
+      message: `${name || email} joined`,
+      timestamp: new Date().toISOString(),
+    })
+    console.log('emitted, clients:', io.sockets.sockets.size)
+
     res.status(201).json({ status: 'success', data: { user, accessToken } })
   } catch (err: unknown) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -37,8 +49,9 @@ export async function register(req: Request, res: Response, next: NextFunction) 
 
 export async function login(req: Request, res: Response, next: NextFunction) {
   const { email, password } = req.body
-
+  console.log(req.ip)
   try {
+    await rateLimitByIp(req.ip ?? 'unknown', 'login');
     const user = await prisma.user.findUnique({ where: { email } })
 
     if (!user) {
@@ -63,6 +76,12 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     })
 
     const { password: _, ...userWithoutPassword } = user
+
+      io.emit('activity', {
+      type: 'user:login',
+      message: `${user.name || user.email} logged in`,
+      timestamp: new Date().toISOString(),
+    })
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,

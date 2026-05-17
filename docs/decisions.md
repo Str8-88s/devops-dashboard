@@ -255,3 +255,11 @@ Decision: Socket.io server attachment
 Choice: io.attach(httpServer, options) called in index.ts after httpServer is created
 Alternatives considered: Passing httpServer into socket.ts constructor
 Why: The HTTP server is created in index.ts from the Express app. socket.ts constructs the Server instance first with no httpServer argument, then index.ts calls io.attach(httpServer, corsOptions) once the server exists. Keeps socket.ts free of index.ts imports and avoids the circular dependency entirely.
+
+---
+
+Decision: Rate limiter key format uses req.ip directly
+Alternatives considered: Normalizing IPv6-mapped addresses to IPv4
+Why: req.ip returns ::ffff:127.0.0.1 in this environment — functionally correct for rate limiting purposes. Normalization adds complexity with no real benefit locally or on Cloud Run.
+
+---

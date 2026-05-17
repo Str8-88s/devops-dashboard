@@ -12,7 +12,7 @@ function RegisterPage() {
     e.preventDefault()
     setError('')
 
-    const res = await fetch('/api/users', {
+    const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
