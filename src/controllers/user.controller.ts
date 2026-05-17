@@ -48,7 +48,6 @@ import redis from '../lib/redis';
 }
 
 export async function updateUser(req: Request, res: Response, next: NextFunction) {
-    
     try {
         const { id } = req.params as { id: string }
         const input = req.body as UpdateUserInput
@@ -62,23 +61,29 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
                 createdAt: true
             }
         })
+
+        await redis.del(`user:${id}`);
+
         res.json({ data: user });
     } catch (err: unknown) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-        return next(new AppError(404, 'User not found'));
+            return next(new AppError(404, 'User not found'));
         }
         next(err);
     }
 }
 
-    export async function deleteUser(req: Request, res: Response, next: NextFunction) {
+export async function deleteUser(req: Request, res: Response, next: NextFunction) {
     try {
         const { id } = req.params as { id: string }
         await prisma.user.delete({ where: { id } })
+
+        await redis.del(`user:${id}`);
+
         res.status(204).send()
     } catch (err: unknown) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-        return next(new AppError(404, 'User not found'))
+            return next(new AppError(404, 'User not found'))
         }
         next(err)
     }
