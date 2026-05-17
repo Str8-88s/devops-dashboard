@@ -32,6 +32,15 @@ app.use(express.json())
 app.use(cookieParser())
 app.use('/api/users', userRoutes)
 app.use('/api/auth', authRoutes)
+
+app.get('/health', async (req: Request, res: Response) => {
+  // ... unchanged
+});
+
+app.get('/test-error', (req, res) => {
+  throw new Error('Sentry test error');
+});
+
 app.use(errorHandler)
 
 app.get('/health', async (req: Request, res: Response) => {
@@ -56,6 +65,5 @@ app.get('/health', async (req: Request, res: Response) => {
     health.status = 'degraded';
   }
 
-  const statusCode = health.status === 'healthy' ? 200 : 503;
-  res.status(statusCode).json(health);
 });
+
