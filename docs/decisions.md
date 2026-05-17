@@ -301,9 +301,9 @@ Why: Deleting on write is simpler and safer than updating in place. Next read re
 ---
 
 Decision: Production Redis
-Choice: Upstash free tier (planned for Week 11)
+Choice: Upstash Pay as You Go
 Alternatives considered: GCP Memorystore (~$40/month)
-Why: Upstash is serverless Redis with a generous free tier — zero cost, matches Supabase philosophy. No refactoring required since ioredis connection string is the only change.
+Why: Upstash is serverless Redis with a generous free tier — zero cost at this scale, matches Supabase philosophy. No refactoring required since ioredis connection string is the only change.
 
 ---
 
@@ -311,3 +311,31 @@ Decision: Local Redis setup
 Choice: Docker container (redis:7-alpine)
 Alternatives considered: WSL Redis install
 Why: Docker Desktop already installed. One command, no WSL required, isolated from host system.
+
+---
+
+Decision: Health check implementation
+Choice: Live dependency checks (DB SELECT 1 + Redis ping) over static response
+Alternatives considered: Static { status: 'healthy' }
+Why: Real dependency checks give Cloud Run and load balancers actionable signal. 503 on degraded state enables automatic traffic routing away from unhealthy instances.
+
+---
+
+Decision: Health check degraded state
+Choice: status: 'degraded' + 503 when any dependency fails
+Alternatives considered: Still return 200 with unhealthy fields
+Why: HTTP status codes are what infrastructure acts on — a 200 with unhealthy fields is invisible to load balancers. 503 triggers Cloud Run health check failures and alerts.
+
+---
+
+Decision: Redis behavior in test environment
+Choice: Skip rate limiting entirely (NODE_ENV=test early return) + fail open on cache ops
+Alternatives considered: Spin up Redis in CI, mock Redis
+Why: Tests shouldn't depend on external services. Rate limiting is infrastructure, not business logic — skipping it in tests doesn't reduce test value. Fail open keeps cache ops from breaking tests when Redis is unavailable.
+
+---
+
+Decision: Jest process exit
+Choice: --forceExit flag
+Alternatives considered: Explicitly closing ioredis in afterAll, --detectOpenHandles
+Why: ioredis keeps async handles open after tests complete, preventing Jest from exiting cleanly. forceExit is the standard solution when third-party clients don't expose clean shutdown in test contexts.

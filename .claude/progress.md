@@ -3,9 +3,9 @@
 ## Current Status
 
 **Phase:** Phase 3 — Advanced Features
-**Current Week:** Week 10 (complete)
+**Current Week:** Week 11 (in progress)
 **Last Updated:** May 17, 2026
-**Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) — zero cost stack
+**Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) + Upstash (Redis) — zero cost stack
 **Production URL:** https://devops-dashboard-985792054692.us-east1.run.app
 
 ---
@@ -26,8 +26,8 @@
 
 ### Phase 3: Advanced Features (Weeks 9–12)
 - [x] **Week 9:** WebSocket server, real-time dashboard updates
-- [x] **Week 10:** Redis caching, rate limiting, cache invalidation ← *complete*
-- [ ] **Week 11:** Monitoring, health checks, error tracking, observability
+- [x] **Week 10:** Redis caching, rate limiting, cache invalidation
+- [ ] **Week 11:** Monitoring, health checks, error tracking, observability ← *in progress*
 - [ ] **Week 12:** Docs, ADRs, API docs, technical blog post
 
 ---
@@ -35,201 +35,74 @@
 ## Session Log
 
 ### Session 1 — May 3, 2026
-
-**Completed:**
-- Git initialized at project level; stray `.git` in `C:\Users\Thomas` removed
-- GitHub repo created and pushed (`devops-dashboard`)
-- PowerShell execution policy set (`RemoteSigned`)
-- Express 5 + TypeScript server running; health endpoint verified at `/health`
-- `dotenv` configured; `PORT` reads from env (Cloud Run compatible)
-- `.gitignore` in place: `node_modules/`, `dist/`, `.env`
-- Folder structure created: `src/routes`, `src/controllers`, `src/middleware`, `src/types`
-- Switched Claude context strategy: version-controlled `.claude/` folder in repo instead of copy-paste instructions
-
----
+- Git initialized, GitHub repo created, Express + TypeScript server running
+- `.claude/` context strategy established
 
 ### Session 2 — May 4, 2026
-
-**Completed:**
-- Installed Zod and walked through schema → middleware → controller validation pattern
-- Created `src/schemas/user.schema.ts` with `CreateUserSchema` and inferred `CreateUserInput` type
-- Created `src/middleware/validate.ts` — reusable validation middleware using `safeParse`
-- Created `src/controllers/user.controller.ts` with all four CRUD stubs
-- Created `src/routes/user.routes.ts` — all four CRUD routes wired up and verified
-- Registered routes in `index.ts` under `/api/users`
-- Created `docs/decisions.md` with decision entries
-- Verified all endpoints in Thunder Client (validation errors working correctly)
-- Fixed `z.Infer` → `z.infer` (capital I was deprecated)
-- Migrated from `z.string().email()` → `z.email()` (Zod v4 API change)
-- Updated `instructions.md` — decisions logged in real time during sessions
-- Installed Prisma v7 + PostgreSQL 18 locally
-- Defined User model in `schema.prisma`
-- Ran first migration (`20260505003409_init`) — User table live in database
-
-**Key concepts covered:**
-- `z.infer<typeof Schema>` — single source of truth for runtime + compile-time types
-- `safeParse` vs `parse` — never throws, lets you control the error response
-- Validation in middleware not controllers — separation of concerns
-- Never echo passwords back in responses, even in stubs
-- Zod v4 has breaking API changes from v3 — many online examples show outdated syntax
-- `.optional()` on update schemas — don't require every field, just validate what's present
-- Prisma v7 moves connection URL config out of `schema.prisma` into `prisma.config.ts`
-- Never paste `.env` contents into chat
-
----
+- Zod validation, CRUD routes, Prisma v7 + PostgreSQL setup
 
 ### Session 3 — May 5, 2026
-
-**Completed:**
-- Installed `bcrypt` + `@types/bcrypt`
-- Installed `@types/node` (fixes `process.env` TS errors)
-- Created `src/lib/prisma.ts` — singleton PrismaClient with PrismaPg adapter
-- Replaced all four CRUD stubs in `user.controller.ts` with real Prisma DB calls
-- Handled Prisma error codes: `P2002` (unique constraint) → 409, `P2025` (not found) → 404
-- Fixed `dotenv/config` import order — must be first line in `index.ts`
-- Resolved Prisma v7 breaking changes
-- Verified full CRUD against real PostgreSQL database
-- Added `SIGTERM` handler to `index.ts` for graceful Prisma disconnect
-- Excluded password from `UpdateUserSchema`
-
----
+- Real Prisma DB calls, bcrypt, SIGTERM handler
 
 ### Session 4 — May 5, 2026
-
-**Completed:**
-- Added `RefreshToken` model to `schema.prisma` with relation to `User`
-- Ran migration `20260505180615_add_refresh_tokens`
-- Installed `jsonwebtoken` + `@types/jsonwebtoken`
-- Created `src/lib/jwt.ts` — signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken
-- Created `src/schemas/auth.schema.ts` — LoginSchema
-- Created `src/controllers/auth.controller.ts` — register, login, refresh, logout
-- Created `src/routes/auth.routes.ts`
-- Created `src/middleware/auth.ts` — authenticate middleware
-- Protected user routes
-
----
+- JWT auth, refresh tokens, authenticate middleware
 
 ### Session 5 — May 5, 2026
-
-**Completed:**
-- Scaffolded React + TypeScript frontend using Vite
-- Created folder structure: `client/src/components`, `pages`, `lib`, `hooks`, `types`
-- Installed React Router and configured routes
-- Created `LoginPage.tsx` with fetch to `/api/auth/login`
-- Fixed CORS — installed `cors` + `@types/cors`
-- Verified full stack login
-
-**Commit:** `feat: scaffold React frontend with login form and CORS config`
-
----
+- React + Vite frontend, login page, CORS
+- **Commit:** `feat: scaffold React frontend with login form and CORS config`
 
 ### Session 6 — May 6, 2026
-
-**Completed:**
-- Moved refresh token from JSON response body to httpOnly cookie
-- Implemented token rotation in `refresh` controller
-- Built `client/src/lib/authContext.tsx` — AuthProvider with silent refresh
-- Split `useAuth` hook into separate file
-- Built `ProtectedRoute.tsx` and `RegisterPage.tsx`
-- Added Vite proxy in `vite.config.ts`
-- Removed StrictMode
-
-**Commit:** `feat: React frontend with auth flow, protected routes, silent refresh`
-
----
+- httpOnly cookie refresh tokens, token rotation, AuthProvider, ProtectedRoute
+- **Commit:** `feat: React frontend with auth flow, protected routes, silent refresh`
 
 ### Session 7 — May 7, 2026
-
-**Completed:**
-- Created `src/lib/AppError.ts` — custom error class with statusCode
-- Created `src/middleware/errorHandler.ts` — centralized error handler
-- Refactored all controllers to use `next(err)` instead of inline error responses
-- Installed Pino for structured logging
-- Created `src/lib/logger.ts` — Pino logger with pino-pretty in dev, JSON in production
-- Added manual request logging middleware to `index.ts`
-
-**Commit:** `feat: centralized error handling and structured logging`
-
----
+- AppError, centralized error handler, Pino structured logging
+- **Commit:** `feat: centralized error handling and structured logging`
 
 ### Session 8 — May 10, 2026
-
-**Completed:**
-- Installed Jest 29 + ts-jest 29 + @types/jest 29 + supertest
-- Created test database `devops_dashboard_test`; migrations applied
-- Split `src/index.ts` into `src/app.ts` + `src/index.ts`
-- Created auth and user integration test suites — 21/21 tests passing
-- Final coverage: **94.71% statements, 88.57% branches**
-- Decided on deployment stack: Cloud Run (GCP) + Supabase (PostgreSQL)
-
----
+- Jest 29 + ts-jest 29, integration test suite, 94.71% coverage, app.ts/index.ts split
 
 ### Session 9 — May 13, 2026
-
-**Completed:**
-- Created Supabase project (East US - Ohio region)
-- Applied Prisma migrations to Supabase via session pooler (`migrate deploy`)
-- Installed Docker Desktop (v29.4.3)
-- Wrote `Dockerfile` (node:20-alpine, production build)
-- Built Docker image and deployed to Cloud Run
-- Production URL live: https://devops-dashboard-985792054692.us-east1.run.app
-
-**Commit:** `feat: dockerize backend for Cloud Run deployment`
-
----
+- Supabase setup, Docker, Cloud Run deployment — production URL live
 
 ### Session 10 — May 16, 2026
-
-**Completed:**
-- Set up GCP Workload Identity Federation for GitHub Actions
-- Wrote `.github/workflows/deploy.yml` — test job + deploy job
-- Pipeline fully green — Test ✅ Deploy ✅ in 2m 42s
-
----
+- Workload Identity Federation, GitHub Actions CI/CD pipeline green
 
 ### Session 11 — May 16, 2026
-
-**Completed:**
-- Installed `socket.io` on the backend
-- Created `src/lib/socket.ts` — shared Server instance
-- Built `DashboardPage.tsx` — live activity feed with connection indicator
-- Fixed `RegisterPage.tsx` — was fetching `/api/users` instead of `/api/auth/register`
-
-**Commit:** `feat: WebSocket server with real-time activity feed`
-
----
+- Socket.io backend, shared socket.ts module, DashboardPage with live activity feed
+- **Commit:** `feat: WebSocket server with real-time activity feed`
 
 ### Session 12 — May 17, 2026
+- Logout button, nav structure, Redis rate limiting, /me caching, cache invalidation
+- **Commits:** rate limiting, caching, cache invalidation
+
+### Session 13 — May 17, 2026
 
 **Completed:**
-- Added logout button to `DashboardPage.tsx` — calls `logout()` from `useAuth`, redirects to `/login`
-- Added basic navigation structure to dashboard header (placeholder for future pages)
-- Spun up Redis 7 via Docker: `docker run -d --name redis-dev -p 6379:6379 redis:7-alpine`
-- Installed `ioredis`
-- Created `src/lib/redis.ts` — singleton Redis client with `lazyConnect: true`
-- Created `src/lib/rateLimiter.ts` — IP-based rate limiting using Redis `incr` + `expire`
-- Wired rate limiting into `register` and `login` controllers (10 requests / 60 seconds)
-- Verified 429 response after exceeding limit; Redis key confirmed at `rate:login:::ffff:127.0.0.1`
-- Created `GET /api/users/me` endpoint in `user.controller.ts` with Redis caching (5 minute TTL)
-- Added `/me` route to `user.routes.ts` above `/:id` to prevent param collision
-- Verified `source: 'db'` on first hit, `source: 'cache'` on subsequent hits
-- Added cache invalidation to `updateUser` and `deleteUser` — `redis.del(`user:${id}`)` after write
-- Verified full cache invalidation flow: cache → update → cache cleared → repopulated from DB
+- Enhanced `/health` endpoint — checks DB (`SELECT 1`) and Redis (`ping`) live
+- Returns `degraded` + 503 when any dependency is down; verified with Redis stopped
+- Spun up Upstash Redis (Pay as You Go, us-east1, eviction off)
+- Updated `src/lib/redis.ts` — uses `REDIS_URL` env var when set, falls back to localhost
+- Added `REDIS_URL` to `.env`, GitHub Secrets, and Cloud Run `env_vars` in `deploy.yml`
+- Fixed CI test failures — `rateLimiter.ts` skips entirely in test env (`NODE_ENV=test`)
+- Fixed CI test failures — `redis.del` in `updateUser`/`deleteUser` wrapped in try/catch
+- Added `--forceExit` to Jest test script
+- All 21 tests passing in CI, deploy green
+- Production `/health` returning all healthy with Upstash Redis live
 
 **Key concepts covered:**
-- `lazyConnect: true` — Redis client won't throw on startup if Redis is down
-- Redis `incr` is atomic — safe for concurrent rate limit counting
-- Set expiry on first request only (`requests === 1`) — window resets after 60 seconds
-- `/me` route must be registered before `/:id` — Express matches routes in order
-- Cache invalidation pattern: write DB first, then `del` the cache key
-- `source` field in response is a temporary debug tool — remove before Week 12
-- Docker Compose is the right fix for multi-container local dev — planned for Week 11
-- Production Redis will use Upstash free tier (zero cost, matches Supabase philosophy)
+- `503` on degraded health — load balancers and Cloud Run act on status codes
+- `degraded` state — app is up but not fully operational
+- Fail open on Redis errors — Redis outage shouldn't take down login or user updates
+- Skip Redis in test env — tests shouldn't depend on external services
+- `--forceExit` on Jest — prevents hang when ioredis handles don't close cleanly
+- Upstash Pay as You Go — effectively free at this scale
 
 **Commits:**
-- `feat: Redis rate limiting on login and register endpoints`
-- `feat: Redis caching on /api/users/me with 5 minute TTL`
-- `feat: cache invalidation on user update and delete`
+- `feat: enhanced health check with database and Redis dependency status`
+- `feat: Upstash Redis for production, enhanced health check`
+- `fix: skip rate limiting in test env, fail open when Redis unavailable`
+- `fix: swallow Redis errors in updateUser and deleteUser for test env`
 
 ---
 
@@ -264,21 +137,24 @@
 | May 10 | App/server split | `app.ts` + `index.ts` | Supertest needs importable app without starting the HTTP server |
 | May 10 | Refresh token uniqueness | `jti: randomUUID()` | Tokens signed same second produce identical strings without jti |
 | May 10 | Production database | Supabase over Cloud SQL | Cloud SQL costs ~$12-15/month at idle; Supabase is free PostgreSQL |
-| May 13 | Supabase connection method | Session pooler over direct | Direct uses IPv6 by default; session pooler works over IPv4, compatible with Prisma |
+| May 13 | Supabase connection method | Session pooler over direct | Direct uses IPv6; session pooler works over IPv4, compatible with Prisma |
 | May 13 | Docker base image | node:20-alpine | Minimal image size, LTS Node version |
 | May 13 | tsconfig outDir | `./dist` with `rootDir: ./src` | Ensures compiled output lands directly in dist/ not dist/src/ |
-| May 16 | CI/CD auth | Workload Identity Federation over service account JSON key | Org policy blocked key creation; WIF is more secure anyway |
+| May 16 | CI/CD auth | Workload Identity Federation | Org policy blocked key creation; WIF is more secure anyway |
 | May 16 | Dockerfile build | Build TypeScript inside Docker | Ensures image is always built from source |
 | May 16 | Socket.io instance location | src/lib/socket.ts shared module | Avoids circular dependency with index.ts |
-| May 16 | Socket.io server attachment | io.attach(httpServer, options) in index.ts | socket.ts constructs io first; index.ts attaches after HTTP server creation |
-| May 17 | Redis client | ioredis over official redis package | Better TypeScript support, more reliable reconnection handling |
+| May 16 | Socket.io server attachment | io.attach(httpServer, options) in index.ts | socket.ts constructs io first; index.ts attaches after |
+| May 17 | Redis client | ioredis over official redis package | Better TypeScript support, more reliable reconnection |
 | May 17 | Redis connection | lazyConnect: true | App stays resilient if Redis is down on startup |
-| May 17 | Rate limit key | req.ip directly (includes ::ffff: prefix) | Functionally correct; normalizing IPv6-mapped addresses adds complexity with no real benefit |
-| May 17 | Rate limit storage | Redis over in-memory | Survives restarts, works across multiple instances on Cloud Run |
+| May 17 | Rate limit key | req.ip directly | Functionally correct; normalizing IPv6-mapped addresses adds complexity |
+| May 17 | Rate limit storage | Redis over in-memory | Survives restarts, works across multiple Cloud Run instances |
 | May 17 | Cache TTL | 5 minutes for /me endpoint | Balances freshness with DB load reduction |
 | May 17 | Cache invalidation | redis.del on update/delete | Prevents stale data; next read repopulates from DB |
-| May 17 | Production Redis | Upstash free tier (planned) | Zero cost, matches Supabase philosophy |
+| May 17 | Production Redis | Upstash Pay as You Go | Zero cost at this scale; no refactoring needed |
 | May 17 | Local Redis | Docker container | Already have Docker Desktop; no WSL required |
+| May 17 | Health check | Live dependency checks over static response | Real status — DB SELECT 1 + Redis ping; 503 on degraded |
+| May 17 | Redis test behavior | Skip rate limiting + fail open on cache ops | Tests shouldn't depend on Redis; Redis outage shouldn't break core app |
+| May 17 | Jest exit | --forceExit | ioredis keeps async handles open; forceExit prevents CI hang |
 
 ---
 
@@ -292,7 +168,8 @@
 - gcloud CLI SDK 568.0.0 ✓
 - GitHub repo: `devops-dashboard` ✓
 - Thunder Client installed ✓
-- Redis: Docker container (`redis-dev`) on port 6379 ✓
+- Redis: Docker container (`redis-dev`) on port 6379 — local dev
+- Redis: Upstash (Pay as You Go, us-east1) — production
 - GCP Project: `project-21878190-6e72-4ba8-bcc`
 - Artifact Registry: `us-east1-docker.pkg.dev/project-21878190-6e72-4ba8-bcc/devops-dashboard`
 - Production URL: `https://devops-dashboard-985792054692.us-east1.run.app`
@@ -359,3 +236,9 @@ devops-dashboard/
 ├── jest.config.js
 └── prisma.config.js
 ```
+
+## Outstanding / Next Session
+
+- Docker Compose for single-command local dev startup
+- Sentry error tracking (free tier)
+- Week 12: Documentation, ADRs, API docs, technical blog post
