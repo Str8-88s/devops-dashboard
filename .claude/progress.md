@@ -2,9 +2,9 @@
 
 ## Current Status
 
-**Phase:** Phase 2 — Production Quality
-**Current Week:** Week 9 (in progress)
-**Last Updated:** May 16, 2026
+**Phase:** Phase 3 — Advanced Features
+**Current Week:** Week 10 (complete)
+**Last Updated:** May 17, 2026
 **Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) — zero cost stack
 **Production URL:** https://devops-dashboard-985792054692.us-east1.run.app
 
@@ -25,8 +25,8 @@
 - [x] **Week 8:** CI/CD pipeline with GitHub Actions, automated tests
 
 ### Phase 3: Advanced Features (Weeks 9–12)
-- [ ] **Week 9:** WebSocket server, real-time dashboard updates ← *in progress*
-- [ ] **Week 10:** Redis caching, query optimization, performance tuning
+- [x] **Week 9:** WebSocket server, real-time dashboard updates
+- [x] **Week 10:** Redis caching, rate limiting, cache invalidation ← *complete*
 - [ ] **Week 11:** Monitoring, health checks, error tracking, observability
 - [ ] **Week 12:** Docs, ADRs, API docs, technical blog post
 
@@ -92,13 +92,6 @@
 - Added `SIGTERM` handler to `index.ts` for graceful Prisma disconnect
 - Excluded password from `UpdateUserSchema`
 
-**Key concepts covered:**
-- Prisma v7 is a significant breaking change from v6 — adapter pattern is now required
-- `select` on every Prisma query — whitelist fields explicitly, never return password
-- Singleton PrismaClient pattern — one instance for the whole app, not per request
-- P2002 = unique constraint violation, P2025 = record not found
-- Password changes belong on a dedicated endpoint, not a generic update
-
 ---
 
 ### Session 4 — May 5, 2026
@@ -113,12 +106,6 @@
 - Created `src/routes/auth.routes.ts`
 - Created `src/middleware/auth.ts` — authenticate middleware
 - Protected user routes
-
-**Key concepts covered:**
-- Two token pattern — short-lived access token (15m), long-lived refresh token (7d)
-- Separate secrets for access and refresh tokens
-- Never reveal which credential failed on login
-- `res.locals.userId` — correct way to pass data from middleware to controller
 
 ---
 
@@ -175,10 +162,6 @@
 - Final coverage: **94.71% statements, 88.57% branches**
 - Decided on deployment stack: Cloud Run (GCP) + Supabase (PostgreSQL)
 
-**Commits:**
-- `feat: integration test suite with 94% coverage`
-- `chore: update deployment strategy — Cloud Run + Supabase`
-
 ---
 
 ### Session 9 — May 13, 2026
@@ -186,29 +169,10 @@
 **Completed:**
 - Created Supabase project (East US - Ohio region)
 - Applied Prisma migrations to Supabase via session pooler (`migrate deploy`)
-- Verified `User` and `RefreshToken` tables live in Supabase
 - Installed Docker Desktop (v29.4.3)
 - Wrote `Dockerfile` (node:20-alpine, production build)
-- Wrote `.dockerignore`
-- Fixed `tsconfig.json` — set `rootDir: ./src`, `outDir: ./dist` so compiled output lands directly in `dist/` not `dist/src/`
-- Built Docker image successfully
-- Tested container locally — `/health` returned healthy
-- Installed and configured `gcloud` CLI (SDK 568.0.0)
-- Enabled Cloud Run + Artifact Registry APIs
-- Created Artifact Registry repository (`devops-dashboard`, us-east1)
-- Tagged and pushed Docker image to Artifact Registry
-- Deployed to Cloud Run — **app live at https://devops-dashboard-985792054692.us-east1.run.app**
-- Verified `/health` endpoint returning `{"status":"healthy"}` from production
-
-**Key concepts covered:**
-- `migrate deploy` vs `migrate dev` — deploy is production-safe, applies existing migrations only
-- Supabase direct connections use IPv6 by default — use session pooler for IPv4 environments
-- Session pooler vs transaction pooler — session maintains persistent connections, compatible with Prisma; transaction pooler breaks prepared statements
-- Percent-encode special characters in database URLs (`@` → `%40`)
-- Docker image maps `dist/` not `src/` — container runs compiled JS
-- Cloud Run injects `PORT=8080` at runtime — code must read `process.env.PORT`
-- `docker tag` + `docker push` to Artifact Registry before `gcloud run deploy`
-- `--allow-unauthenticated` flag required for public API access on Cloud Run
+- Built Docker image and deployed to Cloud Run
+- Production URL live: https://devops-dashboard-985792054692.us-east1.run.app
 
 **Commit:** `feat: dockerize backend for Cloud Run deployment`
 
@@ -217,24 +181,9 @@
 ### Session 10 — May 16, 2026
 
 **Completed:**
-- Fixed git config email (was set to placeholder `any@email.com`)
-- Set up GCP Workload Identity Federation for GitHub Actions (no long-lived service account keys)
-- Created `github-actions` service account with Artifact Registry writer + Cloud Run admin + service account user roles
-- Added `GCP_WORKLOAD_IDENTITY_PROVIDER` and `GCP_SERVICE_ACCOUNT` to GitHub Secrets
-- Wrote `.github/workflows/deploy.yml` — test job + deploy job, deploy gated on tests passing
-- Fixed CI issues: added `prisma generate` step, typed catch parameters as `unknown`, removed `src` from `.dockerignore`, removed `prisma.config.ts` from tsconfig include
-- Updated Dockerfile to build TypeScript inside the container (`npm run build` in image)
-- Rewrote `prisma.config.js` to use `module.exports` instead of `exports.default`
-- Removed `github-actions-key.json` from git tracking, added to `.gitignore`
+- Set up GCP Workload Identity Federation for GitHub Actions
+- Wrote `.github/workflows/deploy.yml` — test job + deploy job
 - Pipeline fully green — Test ✅ Deploy ✅ in 2m 42s
-
-**Key concepts covered:**
-- Workload Identity Federation — short-lived OIDC tokens instead of long-lived service account keys
-- Docker images are immutable snapshots tagged by commit SHA — enables instant rollbacks
-- Artifact Registry stores every image ever built — full deploy history
-- CI PostgreSQL service containers spin up fresh for each run, torn down after
-- `prisma generate` must run in CI before type check — generated client isn't committed to repo
-- `exports.default` vs `module.exports` — Prisma config requires the latter for CommonJS
 
 ---
 
@@ -242,20 +191,46 @@
 
 **Completed:**
 - Installed `socket.io` on the backend
-- Created `src/lib/socket.ts` — exports a shared `Server` instance to avoid circular dependencies
-- Updated `src/index.ts` — creates HTTP server explicitly, attaches Socket.io with CORS config, connection/disconnect logging
-- Added `io.emit('activity', ...)` to register and login controllers in `auth.controller.ts`
-- Installed `socket.io-client` in the React frontend
-- Created `client/src/pages/DashboardPage.tsx` — live activity feed with green/red connection indicator, real-time event rendering
-- Wired `DashboardPage` into `App.tsx` replacing the placeholder div
+- Created `src/lib/socket.ts` — shared Server instance
+- Built `DashboardPage.tsx` — live activity feed with connection indicator
 - Fixed `RegisterPage.tsx` — was fetching `/api/users` instead of `/api/auth/register`
-- Removed stray `prisma.config.ts` (duplicate of `prisma.config.js`)
 
-**Outstanding / Next Session:**
-- Logout button on `DashboardPage` — currently no way to log out from the UI
-- Basic navigation between pages
+**Commit:** `feat: WebSocket server with real-time activity feed`
 
-**Commit:** feat: WebSocket server with real-time activity feed
+---
+
+### Session 12 — May 17, 2026
+
+**Completed:**
+- Added logout button to `DashboardPage.tsx` — calls `logout()` from `useAuth`, redirects to `/login`
+- Added basic navigation structure to dashboard header (placeholder for future pages)
+- Spun up Redis 7 via Docker: `docker run -d --name redis-dev -p 6379:6379 redis:7-alpine`
+- Installed `ioredis`
+- Created `src/lib/redis.ts` — singleton Redis client with `lazyConnect: true`
+- Created `src/lib/rateLimiter.ts` — IP-based rate limiting using Redis `incr` + `expire`
+- Wired rate limiting into `register` and `login` controllers (10 requests / 60 seconds)
+- Verified 429 response after exceeding limit; Redis key confirmed at `rate:login:::ffff:127.0.0.1`
+- Created `GET /api/users/me` endpoint in `user.controller.ts` with Redis caching (5 minute TTL)
+- Added `/me` route to `user.routes.ts` above `/:id` to prevent param collision
+- Verified `source: 'db'` on first hit, `source: 'cache'` on subsequent hits
+- Added cache invalidation to `updateUser` and `deleteUser` — `redis.del(`user:${id}`)` after write
+- Verified full cache invalidation flow: cache → update → cache cleared → repopulated from DB
+
+**Key concepts covered:**
+- `lazyConnect: true` — Redis client won't throw on startup if Redis is down
+- Redis `incr` is atomic — safe for concurrent rate limit counting
+- Set expiry on first request only (`requests === 1`) — window resets after 60 seconds
+- `/me` route must be registered before `/:id` — Express matches routes in order
+- Cache invalidation pattern: write DB first, then `del` the cache key
+- `source` field in response is a temporary debug tool — remove before Week 12
+- Docker Compose is the right fix for multi-container local dev — planned for Week 11
+- Production Redis will use Upstash free tier (zero cost, matches Supabase philosophy)
+
+**Commits:**
+- `feat: Redis rate limiting on login and register endpoints`
+- `feat: Redis caching on /api/users/me with 5 minute TTL`
+- `feat: cache invalidation on user update and delete`
+
 ---
 
 ## Technical Decisions Log
@@ -292,10 +267,18 @@
 | May 13 | Supabase connection method | Session pooler over direct | Direct uses IPv6 by default; session pooler works over IPv4, compatible with Prisma |
 | May 13 | Docker base image | node:20-alpine | Minimal image size, LTS Node version |
 | May 13 | tsconfig outDir | `./dist` with `rootDir: ./src` | Ensures compiled output lands directly in dist/ not dist/src/ |
-| May 16 | CI/CD auth | Workload Identity Federation over service account JSON key | Org policy blocked key creation; WIF is more secure anyway — no long-lived credentials |
-| May 16 | Dockerfile build | Build TypeScript inside Docker over pre-building locally | Ensures image is always built from source; no dependency on local dist/ |
-| May 16 | Socket.io instance location | src/lib/socket.ts shared module | Controllers import from lib, not index.ts — avoids circular dependency |
-| May 16 | Socket.io server attachment | io.attach(httpServer, options) in index.ts | socket.ts constructs io first; index.ts attaches to HTTP server after creation |
+| May 16 | CI/CD auth | Workload Identity Federation over service account JSON key | Org policy blocked key creation; WIF is more secure anyway |
+| May 16 | Dockerfile build | Build TypeScript inside Docker | Ensures image is always built from source |
+| May 16 | Socket.io instance location | src/lib/socket.ts shared module | Avoids circular dependency with index.ts |
+| May 16 | Socket.io server attachment | io.attach(httpServer, options) in index.ts | socket.ts constructs io first; index.ts attaches after HTTP server creation |
+| May 17 | Redis client | ioredis over official redis package | Better TypeScript support, more reliable reconnection handling |
+| May 17 | Redis connection | lazyConnect: true | App stays resilient if Redis is down on startup |
+| May 17 | Rate limit key | req.ip directly (includes ::ffff: prefix) | Functionally correct; normalizing IPv6-mapped addresses adds complexity with no real benefit |
+| May 17 | Rate limit storage | Redis over in-memory | Survives restarts, works across multiple instances on Cloud Run |
+| May 17 | Cache TTL | 5 minutes for /me endpoint | Balances freshness with DB load reduction |
+| May 17 | Cache invalidation | redis.del on update/delete | Prevents stale data; next read repopulates from DB |
+| May 17 | Production Redis | Upstash free tier (planned) | Zero cost, matches Supabase philosophy |
+| May 17 | Local Redis | Docker container | Already have Docker Desktop; no WSL required |
 
 ---
 
@@ -309,6 +292,7 @@
 - gcloud CLI SDK 568.0.0 ✓
 - GitHub repo: `devops-dashboard` ✓
 - Thunder Client installed ✓
+- Redis: Docker container (`redis-dev`) on port 6379 ✓
 - GCP Project: `project-21878190-6e72-4ba8-bcc`
 - Artifact Registry: `us-east1-docker.pkg.dev/project-21878190-6e72-4ba8-bcc/devops-dashboard`
 - Production URL: `https://devops-dashboard-985792054692.us-east1.run.app`
@@ -331,6 +315,8 @@ devops-dashboard/
 │   │   ├── jwt.ts
 │   │   ├── logger.ts
 │   │   ├── prisma.ts
+│   │   ├── redis.ts
+│   │   ├── rateLimiter.ts
 │   │   └── socket.ts
 │   ├── middleware/
 │   │   ├── auth.ts
@@ -365,6 +351,9 @@ devops-dashboard/
 ├── .claude/
 │   ├── instructions.md
 │   └── progress.md
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
 ├── Dockerfile
 ├── .dockerignore
 ├── jest.config.js

@@ -247,19 +247,67 @@ Why: dist/ is gitignored and won't exist in CI. Building inside the image ensure
 Decision: Socket.io instance location
 Choice: Shared Server instance exported from src/lib/socket.ts
 Alternatives considered: Creating io in index.ts and passing it to controllers
-Why: Controllers need to emit events but cannot import from index.ts — that would be a circular dependency (index.ts imports routes → controllers → index.ts). A dedicated lib module breaks the cycle: socket.ts creates io, index.ts attaches it to the HTTP server, controllers import from socket.ts directly.
+Why: Controllers need to emit events but cannot import from index.ts — that would be a circular dependency. A dedicated lib module breaks the cycle.
 
 ---
 
 Decision: Socket.io server attachment
 Choice: io.attach(httpServer, options) called in index.ts after httpServer is created
 Alternatives considered: Passing httpServer into socket.ts constructor
-Why: The HTTP server is created in index.ts from the Express app. socket.ts constructs the Server instance first with no httpServer argument, then index.ts calls io.attach(httpServer, corsOptions) once the server exists. Keeps socket.ts free of index.ts imports and avoids the circular dependency entirely.
+Why: The HTTP server is created in index.ts from the Express app. socket.ts constructs the Server instance first with no httpServer argument, then index.ts calls io.attach(httpServer, corsOptions) once the server exists.
 
 ---
 
-Decision: Rate limiter key format uses req.ip directly
-Alternatives considered: Normalizing IPv6-mapped addresses to IPv4
-Why: req.ip returns ::ffff:127.0.0.1 in this environment — functionally correct for rate limiting purposes. Normalization adds complexity with no real benefit locally or on Cloud Run.
+Decision: Redis client
+Choice: ioredis over official redis package
+Alternatives considered: Official redis npm package
+Why: Better TypeScript support, more reliable reconnection handling, widely used in production Node.js apps.
 
 ---
+
+Decision: Redis connection strategy
+Choice: lazyConnect: true
+Alternatives considered: Eager connection on startup
+Why: App stays resilient if Redis is down on startup — connects on first use rather than throwing immediately. Appropriate for a non-critical caching layer.
+
+---
+
+Decision: Rate limit key format
+Choice: Use req.ip directly (includes ::ffff: IPv6-mapped prefix)
+Alternatives considered: Normalizing ::ffff:127.0.0.1 to 127.0.0.1
+Why: Functionally correct for rate limiting — same IP always produces the same key. Normalization adds complexity with no real benefit locally or on Cloud Run.
+
+---
+
+Decision: Rate limit backing store
+Choice: Redis over in-memory Map
+Alternatives considered: In-memory rate limiting
+Why: Redis survives process restarts and works correctly across multiple Cloud Run instances. In-memory counters reset on restart and don't share state across instances.
+
+---
+
+Decision: Cache TTL for /me endpoint
+Choice: 5 minutes (300 seconds)
+Alternatives considered: 1 minute, 15 minutes, 1 hour
+Why: User profile data changes infrequently. 5 minutes balances DB load reduction with data freshness. Explicit cache invalidation on update/delete handles the stale data problem.
+
+---
+
+Decision: Cache invalidation strategy
+Choice: Delete cache key on write (redis.del after update/delete)
+Alternatives considered: Update cache in place, time-based expiry only
+Why: Deleting on write is simpler and safer than updating in place. Next read repopulates from DB with fresh data. Prevents stale profile data from persisting after updates.
+
+---
+
+Decision: Production Redis
+Choice: Upstash free tier (planned for Week 11)
+Alternatives considered: GCP Memorystore (~$40/month)
+Why: Upstash is serverless Redis with a generous free tier — zero cost, matches Supabase philosophy. No refactoring required since ioredis connection string is the only change.
+
+---
+
+Decision: Local Redis setup
+Choice: Docker container (redis:7-alpine)
+Alternatives considered: WSL Redis install
+Why: Docker Desktop already installed. One command, no WSL required, isolated from host system.
