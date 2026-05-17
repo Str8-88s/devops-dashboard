@@ -3,7 +3,7 @@
 ## Current Status
 
 **Phase:** Phase 3 — Advanced Features
-**Current Week:** Week 12 (starting next)
+**Current Week:** Week 12 (in progress)
 **Last Updated:** May 17, 2026
 **Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) + Upstash (Redis) — zero cost stack
 **Production URL:** https://devops-dashboard-985792054692.us-east1.run.app
@@ -79,34 +79,32 @@
 - Enhanced health check, Upstash Redis, CI test fixes, all 21 tests passing in CI
 
 ### Session 14 — May 17, 2026
+- Docker Compose, Sentry error tracking integration, route ordering fix in app.ts
+- **Commits:** `feat: Docker Compose for local Redis dev setup`, `feat: Sentry error tracking integration`
+
+### Session 15 — May 17, 2026
 
 **Completed:**
-- Docker Compose (`docker-compose.yml`) — single command local Redis startup
-- Removed `version` field from compose file (obsolete in modern Docker Compose)
-- Installed Redis for VS Code extension
-- Installed `@sentry/node`
-- Created `src/lib/sentry.ts` — `initSentry()` with DSN + environment config
-- Called `initSentry()` at top of `src/index.ts`
-- Updated `errorHandler.ts` — `Sentry.captureException(err)` on all 5xx errors
-- Added `SENTRY_DSN` to `.env`, GitHub Secrets, and `deploy.yml` env_vars
-- Fixed route ordering in `app.ts` — `/health` and `/test-error` moved above `errorHandler`
-- Verified Sentry receiving errors — "Sentry test error" appeared in dashboard within seconds
-- Removed `/test-error` route after verification
-- All systems live in production: health check ✓, Upstash Redis ✓, Sentry ✓
+- Installed `swagger-jsdoc`, `swagger-ui-express` + type declarations
+- Created `src/lib/swagger.ts` — OpenAPI 3.0 spec with production + local servers
+- Added Swagger UI route to `app.ts` (`/api/docs`)
+- Fixed `app.ts` — removed duplicate `/health` route, removed `/test-error` route, corrected middleware ordering (cors/json/cookieParser before Swagger)
+- Added missing `res.status(statusCode).json(health)` to health check
+- Annotated `src/routes/auth.routes.ts` — 4 endpoints fully documented
+- Annotated `src/routes/user.routes.ts` — 5 endpoints fully documented
+- Fixed CI type check failure — committed updated `package-lock.json` with swagger type declarations
+- Swagger UI live in production at `/api/docs`
+- Created `README.md` — architecture diagram (Mermaid), tech stack table, features, local setup, API reference, deployment overview, key decisions, project structure
+- Created `.env.example`
+- **Commits:** `feat: Swagger/OpenAPI documentation`, `docs: add README and .env.example`
 
 **Key concepts covered:**
-- `initSentry()` guard on `SENTRY_DSN` — no-ops gracefully if DSN not set (test env)
-- Only capture 5xx in Sentry — 4xx are expected client errors, not bugs
-- Route ordering in Express matters — routes must be registered before error handler
-- Sentry `environment` field — distinguishes production errors from dev noise
-- `tracesSampleRate: 1.0` — capture 100% of transactions (fine for low-traffic portfolio project)
-- Docker Compose replaces manual `docker run` — single command, version controlled
-
-**Commits:**
-- `feat: Docker Compose for local Redis dev setup`
-- `feat: Sentry error tracking integration`
-- `test: add /test-error route to verify Sentry integration`
-- `chore: remove test-error route`
+- Swagger/OpenAPI 3.0 JSDoc annotation format in route files
+- `swagger-jsdoc` scans `apis: ['./src/routes/*.ts']` for `@swagger` comments
+- `securitySchemes.bearerAuth` wires up the lock icon on protected routes
+- Swagger UI server dropdown — production vs local development
+- Middleware ordering matters for Swagger — core middleware must register before `/api/docs`
+- `package-lock.json` must be committed when adding new packages or CI won't find them
 
 ---
 
@@ -162,6 +160,8 @@
 | May 17 | Error tracking | Sentry over manual logging only | Automatic capture with stack traces, request context, grouping; email alerts on new issues |
 | May 17 | Sentry capture scope | 5xx errors only | 4xx are expected client errors — capturing them adds noise without value |
 | May 17 | Sentry sample rate | tracesSampleRate: 1.0 | 100% capture appropriate for low-traffic portfolio project |
+| May 17 | API documentation | Swagger/OpenAPI + README | Swagger for technical exploration, README for everyone else |
+| May 17 | Swagger annotation location | Route files (`*.routes.ts`) | Co-located with the routes they describe; swagger-jsdoc scans via glob |
 
 ---
 
@@ -173,7 +173,7 @@
 - PostgreSQL 18 (local) ✓
 - Docker Desktop v29.4.3 ✓
 - gcloud CLI SDK 568.0.0 ✓
-- GitHub repo: `devops-dashboard` ✓
+- GitHub repo: `Str8-88s/devops-dashboard` ✓
 - Thunder Client installed ✓
 - Redis for VS Code extension installed ✓
 - Redis: Docker Compose (`docker compose up -d`) — local dev
@@ -182,6 +182,7 @@
 - GCP Project: `project-21878190-6e72-4ba8-bcc`
 - Artifact Registry: `us-east1-docker.pkg.dev/project-21878190-6e72-4ba8-bcc/devops-dashboard`
 - Production URL: `https://devops-dashboard-985792054692.us-east1.run.app`
+- Swagger UI: `https://devops-dashboard-985792054692.us-east1.run.app/api/docs`
 - TypeScript experience: learning as part of this project
 
 ## File Structure (current)
@@ -204,7 +205,8 @@ devops-dashboard/
 │   │   ├── redis.ts
 │   │   ├── rateLimiter.ts
 │   │   ├── sentry.ts
-│   │   └── socket.ts
+│   │   ├── socket.ts
+│   │   └── swagger.ts
 │   ├── middleware/
 │   │   ├── auth.ts
 │   │   ├── errorHandler.ts
@@ -244,11 +246,14 @@ devops-dashboard/
 ├── docker-compose.yml
 ├── Dockerfile
 ├── .dockerignore
+├── .env.example
+├── README.md
 ├── jest.config.js
 └── prisma.config.js
 ```
 
 ## Outstanding / Next Session
 
-- Week 12: Documentation, ADRs, API docs, technical blog post
+- Week 12 remaining: ADRs, technical blog post
 - Remove `source: 'db'` / `source: 'cache'` debug fields from /me response before final polish
+- Remove `.claude/instructions.md` when project is 100% complete
