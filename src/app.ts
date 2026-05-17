@@ -5,43 +5,38 @@ import authRoutes from './routes/auth.routes';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { errorHandler } from './middleware/errorHandler';
-import logger from './lib/logger'
+import logger from './lib/logger';
 import prisma from './lib/prisma';
 import redis from './lib/redis';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './lib/swagger';
 
 export const app = express();
 
-app.use((req, res, next) => {
-    const start = Date.now();
-    res.on('finish', () => {
-        logger.info({
-            method: req.method,
-            url: req.url,
-            statusCode: res.statusCode,
-            duration: `${Date.now() - start}ms`,
-        })
-    })
-    next()
-})
-
 app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true,
-}))
-app.use(express.json())
-app.use(cookieParser())
-app.use('/api/users', userRoutes)
-app.use('/api/auth', authRoutes)
+  origin: 'http://localhost:5173',
+  credentials: true,
+}));
+app.use(express.json());
+app.use(cookieParser());
 
-app.get('/health', async (req: Request, res: Response) => {
-  // ... unchanged
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    logger.info({
+      method: req.method,
+      url: req.url,
+      statusCode: res.statusCode,
+      duration: `${Date.now() - start}ms`,
+    });
+  });
+  next();
 });
 
-app.get('/test-error', (req, res) => {
-  throw new Error('Sentry test error');
-});
-
-app.use(errorHandler)
+app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get('/health', async (req: Request, res: Response) => {
   const health: Record<string, string> = {
@@ -65,5 +60,8 @@ app.get('/health', async (req: Request, res: Response) => {
     health.status = 'degraded';
   }
 
+  const statusCode = health.status === 'degraded' ? 503 : 200;
+  res.status(statusCode).json(health);
 });
 
+app.use(errorHandler);
