@@ -3,7 +3,7 @@
 ## Current Status
 
 **Phase:** Phase 3 — Advanced Features
-**Current Week:** Week 11 (in progress)
+**Current Week:** Week 12 (starting next)
 **Last Updated:** May 17, 2026
 **Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) + Upstash (Redis) — zero cost stack
 **Production URL:** https://devops-dashboard-985792054692.us-east1.run.app
@@ -27,7 +27,7 @@
 ### Phase 3: Advanced Features (Weeks 9–12)
 - [x] **Week 9:** WebSocket server, real-time dashboard updates
 - [x] **Week 10:** Redis caching, rate limiting, cache invalidation
-- [ ] **Week 11:** Monitoring, health checks, error tracking, observability ← *in progress*
+- [x] **Week 11:** Docker Compose, enhanced health checks, Upstash Redis, Sentry error tracking
 - [ ] **Week 12:** Docs, ADRs, API docs, technical blog post
 
 ---
@@ -74,35 +74,39 @@
 
 ### Session 12 — May 17, 2026
 - Logout button, nav structure, Redis rate limiting, /me caching, cache invalidation
-- **Commits:** rate limiting, caching, cache invalidation
 
 ### Session 13 — May 17, 2026
+- Enhanced health check, Upstash Redis, CI test fixes, all 21 tests passing in CI
+
+### Session 14 — May 17, 2026
 
 **Completed:**
-- Enhanced `/health` endpoint — checks DB (`SELECT 1`) and Redis (`ping`) live
-- Returns `degraded` + 503 when any dependency is down; verified with Redis stopped
-- Spun up Upstash Redis (Pay as You Go, us-east1, eviction off)
-- Updated `src/lib/redis.ts` — uses `REDIS_URL` env var when set, falls back to localhost
-- Added `REDIS_URL` to `.env`, GitHub Secrets, and Cloud Run `env_vars` in `deploy.yml`
-- Fixed CI test failures — `rateLimiter.ts` skips entirely in test env (`NODE_ENV=test`)
-- Fixed CI test failures — `redis.del` in `updateUser`/`deleteUser` wrapped in try/catch
-- Added `--forceExit` to Jest test script
-- All 21 tests passing in CI, deploy green
-- Production `/health` returning all healthy with Upstash Redis live
+- Docker Compose (`docker-compose.yml`) — single command local Redis startup
+- Removed `version` field from compose file (obsolete in modern Docker Compose)
+- Installed Redis for VS Code extension
+- Installed `@sentry/node`
+- Created `src/lib/sentry.ts` — `initSentry()` with DSN + environment config
+- Called `initSentry()` at top of `src/index.ts`
+- Updated `errorHandler.ts` — `Sentry.captureException(err)` on all 5xx errors
+- Added `SENTRY_DSN` to `.env`, GitHub Secrets, and `deploy.yml` env_vars
+- Fixed route ordering in `app.ts` — `/health` and `/test-error` moved above `errorHandler`
+- Verified Sentry receiving errors — "Sentry test error" appeared in dashboard within seconds
+- Removed `/test-error` route after verification
+- All systems live in production: health check ✓, Upstash Redis ✓, Sentry ✓
 
 **Key concepts covered:**
-- `503` on degraded health — load balancers and Cloud Run act on status codes
-- `degraded` state — app is up but not fully operational
-- Fail open on Redis errors — Redis outage shouldn't take down login or user updates
-- Skip Redis in test env — tests shouldn't depend on external services
-- `--forceExit` on Jest — prevents hang when ioredis handles don't close cleanly
-- Upstash Pay as You Go — effectively free at this scale
+- `initSentry()` guard on `SENTRY_DSN` — no-ops gracefully if DSN not set (test env)
+- Only capture 5xx in Sentry — 4xx are expected client errors, not bugs
+- Route ordering in Express matters — routes must be registered before error handler
+- Sentry `environment` field — distinguishes production errors from dev noise
+- `tracesSampleRate: 1.0` — capture 100% of transactions (fine for low-traffic portfolio project)
+- Docker Compose replaces manual `docker run` — single command, version controlled
 
 **Commits:**
-- `feat: enhanced health check with database and Redis dependency status`
-- `feat: Upstash Redis for production, enhanced health check`
-- `fix: skip rate limiting in test env, fail open when Redis unavailable`
-- `fix: swallow Redis errors in updateUser and deleteUser for test env`
+- `feat: Docker Compose for local Redis dev setup`
+- `feat: Sentry error tracking integration`
+- `test: add /test-error route to verify Sentry integration`
+- `chore: remove test-error route`
 
 ---
 
@@ -151,10 +155,13 @@
 | May 17 | Cache TTL | 5 minutes for /me endpoint | Balances freshness with DB load reduction |
 | May 17 | Cache invalidation | redis.del on update/delete | Prevents stale data; next read repopulates from DB |
 | May 17 | Production Redis | Upstash Pay as You Go | Zero cost at this scale; no refactoring needed |
-| May 17 | Local Redis | Docker container | Already have Docker Desktop; no WSL required |
+| May 17 | Local Redis | Docker Compose | Single command startup, version controlled, no manual docker run |
 | May 17 | Health check | Live dependency checks over static response | Real status — DB SELECT 1 + Redis ping; 503 on degraded |
 | May 17 | Redis test behavior | Skip rate limiting + fail open on cache ops | Tests shouldn't depend on Redis; Redis outage shouldn't break core app |
 | May 17 | Jest exit | --forceExit | ioredis keeps async handles open; forceExit prevents CI hang |
+| May 17 | Error tracking | Sentry over manual logging only | Automatic capture with stack traces, request context, grouping; email alerts on new issues |
+| May 17 | Sentry capture scope | 5xx errors only | 4xx are expected client errors — capturing them adds noise without value |
+| May 17 | Sentry sample rate | tracesSampleRate: 1.0 | 100% capture appropriate for low-traffic portfolio project |
 
 ---
 
@@ -168,8 +175,10 @@
 - gcloud CLI SDK 568.0.0 ✓
 - GitHub repo: `devops-dashboard` ✓
 - Thunder Client installed ✓
-- Redis: Docker container (`redis-dev`) on port 6379 — local dev
+- Redis for VS Code extension installed ✓
+- Redis: Docker Compose (`docker compose up -d`) — local dev
 - Redis: Upstash (Pay as You Go, us-east1) — production
+- Sentry: devops_dashboard project (Express) ✓
 - GCP Project: `project-21878190-6e72-4ba8-bcc`
 - Artifact Registry: `us-east1-docker.pkg.dev/project-21878190-6e72-4ba8-bcc/devops-dashboard`
 - Production URL: `https://devops-dashboard-985792054692.us-east1.run.app`
@@ -194,6 +203,7 @@ devops-dashboard/
 │   │   ├── prisma.ts
 │   │   ├── redis.ts
 │   │   ├── rateLimiter.ts
+│   │   ├── sentry.ts
 │   │   └── socket.ts
 │   ├── middleware/
 │   │   ├── auth.ts
@@ -231,6 +241,7 @@ devops-dashboard/
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml
+├── docker-compose.yml
 ├── Dockerfile
 ├── .dockerignore
 ├── jest.config.js
@@ -239,6 +250,5 @@ devops-dashboard/
 
 ## Outstanding / Next Session
 
-- Docker Compose for single-command local dev startup
-- Sentry error tracking (free tier)
 - Week 12: Documentation, ADRs, API docs, technical blog post
+- Remove `source: 'db'` / `source: 'cache'` debug fields from /me response before final polish

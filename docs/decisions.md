@@ -308,9 +308,9 @@ Why: Upstash is serverless Redis with a generous free tier — zero cost at this
 ---
 
 Decision: Local Redis setup
-Choice: Docker container (redis:7-alpine)
-Alternatives considered: WSL Redis install
-Why: Docker Desktop already installed. One command, no WSL required, isolated from host system.
+Choice: Docker Compose over manual docker run
+Alternatives considered: Manual docker run command, WSL Redis install
+Why: Docker Compose is version controlled, single command startup, no need to remember flags. Matches production infrastructure-as-code philosophy.
 
 ---
 
@@ -339,3 +339,31 @@ Decision: Jest process exit
 Choice: --forceExit flag
 Alternatives considered: Explicitly closing ioredis in afterAll, --detectOpenHandles
 Why: ioredis keeps async handles open after tests complete, preventing Jest from exiting cleanly. forceExit is the standard solution when third-party clients don't expose clean shutdown in test contexts.
+
+---
+
+Decision: Error tracking
+Choice: Sentry over manual logging only
+Alternatives considered: Relying solely on Pino logs in Cloud Run
+Why: Pino logs require manual log inspection. Sentry automatically captures unhandled errors with full stack traces, request context, and user impact grouping. Email alerts on new issues enable proactive response rather than reactive discovery.
+
+---
+
+Decision: Sentry capture scope
+Choice: 5xx errors only (inside errorHandler for unknown errors)
+Alternatives considered: Capturing all errors including AppError 4xx
+Why: 4xx errors are expected client behavior — invalid input, wrong credentials, not found. Capturing them adds noise without value. 5xx errors are bugs that need fixing.
+
+---
+
+Decision: Sentry sample rate
+Choice: tracesSampleRate: 1.0 (100%)
+Alternatives considered: 0.1 or 0.2 for high-traffic apps
+Why: 100% sampling is appropriate for a low-traffic portfolio project. High-traffic production apps would sample lower to control costs and volume.
+
+---
+
+Decision: Express route ordering
+Choice: Routes registered before errorHandler, health + test routes above errorHandler
+Alternatives considered: Any order
+Why: Express runs middleware in registration order. Routes registered after errorHandler never reach it for error handling — thrown errors propagate to the next error handler registered, which must come after all routes.
