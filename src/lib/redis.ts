@@ -7,6 +7,7 @@ const redis = process.env.REDIS_URL
       host: process.env.REDIS_HOST ?? 'localhost',
       port: parseInt(process.env.REDIS_PORT ?? '6379'),
       lazyConnect: true,
+      retryStrategy: process.env.NODE_ENV === 'test' ? () => null : undefined,
     });
 
 redis.on('connect', () => logger.info('Redis connected'));
