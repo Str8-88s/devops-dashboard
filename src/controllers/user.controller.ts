@@ -62,7 +62,7 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
             }
         })
 
-        await redis.del(`user:${id}`);
+        try { await redis.del(`user:${id}`); } catch {}
 
         res.json({ data: user });
     } catch (err: unknown) {
@@ -78,7 +78,7 @@ export async function deleteUser(req: Request, res: Response, next: NextFunction
         const { id } = req.params as { id: string }
         await prisma.user.delete({ where: { id } })
 
-        await redis.del(`user:${id}`);
+        try { await redis.del(`user:${id}`); } catch {}
 
         res.status(204).send()
     } catch (err: unknown) {
@@ -88,7 +88,6 @@ export async function deleteUser(req: Request, res: Response, next: NextFunction
         next(err)
     }
 }
-
 export async function getMe(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = res.locals.userId as string;
