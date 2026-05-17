@@ -6,6 +6,7 @@ import { Prisma } from '../generated/prisma/client'
 import { AppError } from '../lib/AppError';
 import { io } from '../lib/socket';
 import { rateLimitByIp } from '../lib/rateLimiter';
+import redis from '../lib/redis';
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   console.log('register controller hit')
@@ -155,5 +156,30 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
     res.status(200).json({ status: 'success', message: 'Logged out' })
   } catch (err: unknown) {
     next(err)
+  }
+}
+
+export async function getMe(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = res.locals.userId as string;
+
+    const cached = await redis.get(`user:${userId}`);
+    if (cached) {
+      return res.json({ data: JSON.parse(cached), source: 'cache' });
+    }
+
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, createdAt: true }
+    });
+
+    await redis.set(`user:${userId}`, JSON.stringify(user), 'EX', 300);
+
+    res.json({ data: user, source: 'db' });
+  } catch (err: unknown) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return next(new AppError(404, 'User not found'));
+    }
+    next(err);
   }
 }
