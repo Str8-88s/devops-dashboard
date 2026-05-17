@@ -2,6 +2,8 @@ import http from 'http';
 import { app } from './app';
 import { io } from './lib/socket';
 import prisma from './lib/prisma';
+import { initSentry } from './lib/sentry';
+initSentry();
 
 const PORT = process.env.PORT || 3000;
 

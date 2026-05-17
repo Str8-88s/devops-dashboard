@@ -105,3 +105,4 @@ jobs:
           image: ${{ env.IMAGE }}:${{ github.sha }}
           env_vars: |
             REDIS_URL=${{ secrets.REDIS_URL }}
+            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
