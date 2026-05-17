@@ -241,3 +241,17 @@ Decision: Dockerfile build strategy
 Choice: Build TypeScript inside the Docker image
 Alternatives considered: Pre-building locally and copying dist/ into image
 Why: dist/ is gitignored and won't exist in CI. Building inside the image ensures the container is always built from source and is fully self-contained.
+
+---
+
+Decision: Socket.io instance location
+Choice: Shared Server instance exported from src/lib/socket.ts
+Alternatives considered: Creating io in index.ts and passing it to controllers
+Why: Controllers need to emit events but cannot import from index.ts — that would be a circular dependency (index.ts imports routes → controllers → index.ts). A dedicated lib module breaks the cycle: socket.ts creates io, index.ts attaches it to the HTTP server, controllers import from socket.ts directly.
+
+---
+
+Decision: Socket.io server attachment
+Choice: io.attach(httpServer, options) called in index.ts after httpServer is created
+Alternatives considered: Passing httpServer into socket.ts constructor
+Why: The HTTP server is created in index.ts from the Express app. socket.ts constructs the Server instance first with no httpServer argument, then index.ts calls io.attach(httpServer, corsOptions) once the server exists. Keeps socket.ts free of index.ts imports and avoids the circular dependency entirely.

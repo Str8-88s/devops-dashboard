@@ -3,7 +3,7 @@
 ## Current Status
 
 **Phase:** Phase 2 — Production Quality
-**Current Week:** Week 9 (starting)
+**Current Week:** Week 9 (in progress)
 **Last Updated:** May 16, 2026
 **Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) — zero cost stack
 **Production URL:** https://devops-dashboard-985792054692.us-east1.run.app
@@ -25,7 +25,7 @@
 - [x] **Week 8:** CI/CD pipeline with GitHub Actions, automated tests
 
 ### Phase 3: Advanced Features (Weeks 9–12)
-- [ ] **Week 9:** WebSocket server, real-time dashboard updates ← *next*
+- [ ] **Week 9:** WebSocket server, real-time dashboard updates ← *in progress*
 - [ ] **Week 10:** Redis caching, query optimization, performance tuning
 - [ ] **Week 11:** Monitoring, health checks, error tracking, observability
 - [ ] **Week 12:** Docs, ADRs, API docs, technical blog post
@@ -181,30 +181,6 @@
 
 ---
 
-### Session 10 — May 16, 2026
-
-**Completed:**
-- Fixed git config email (was set to placeholder `any@email.com`)
-- Set up GCP Workload Identity Federation for GitHub Actions (no long-lived service account keys)
-- Created `github-actions` service account with Artifact Registry writer + Cloud Run admin + service account user roles
-- Added `GCP_WORKLOAD_IDENTITY_PROVIDER` and `GCP_SERVICE_ACCOUNT` to GitHub Secrets
-- Wrote `.github/workflows/deploy.yml` — test job + deploy job, deploy gated on tests passing
-- Fixed CI issues: added `prisma generate` step, typed catch parameters as `unknown`, removed `src` from `.dockerignore`, removed `prisma.config.ts` from tsconfig include
-- Updated Dockerfile to build TypeScript inside the container (`npm run build` in image)
-- Rewrote `prisma.config.js` to use `module.exports` instead of `exports.default`
-- Removed `github-actions-key.json` from git tracking, added to `.gitignore`
-- Pipeline fully green — Test ✅ Deploy ✅ in 2m 42s
-
-**Key concepts covered:**
-- Workload Identity Federation — short-lived OIDC tokens instead of long-lived service account keys
-- Docker images are immutable snapshots tagged by commit SHA — enables instant rollbacks
-- Artifact Registry stores every image ever built — full deploy history
-- CI PostgreSQL service containers spin up fresh for each run, torn down after
-- `prisma generate` must run in CI before type check — generated client isn't committed to repo
-- `exports.default` vs `module.exports` — Prisma config requires the latter for CommonJS
-
----
-
 ### Session 9 — May 13, 2026
 
 **Completed:**
@@ -236,6 +212,50 @@
 
 **Commit:** `feat: dockerize backend for Cloud Run deployment`
 
+---
+
+### Session 10 — May 16, 2026
+
+**Completed:**
+- Fixed git config email (was set to placeholder `any@email.com`)
+- Set up GCP Workload Identity Federation for GitHub Actions (no long-lived service account keys)
+- Created `github-actions` service account with Artifact Registry writer + Cloud Run admin + service account user roles
+- Added `GCP_WORKLOAD_IDENTITY_PROVIDER` and `GCP_SERVICE_ACCOUNT` to GitHub Secrets
+- Wrote `.github/workflows/deploy.yml` — test job + deploy job, deploy gated on tests passing
+- Fixed CI issues: added `prisma generate` step, typed catch parameters as `unknown`, removed `src` from `.dockerignore`, removed `prisma.config.ts` from tsconfig include
+- Updated Dockerfile to build TypeScript inside the container (`npm run build` in image)
+- Rewrote `prisma.config.js` to use `module.exports` instead of `exports.default`
+- Removed `github-actions-key.json` from git tracking, added to `.gitignore`
+- Pipeline fully green — Test ✅ Deploy ✅ in 2m 42s
+
+**Key concepts covered:**
+- Workload Identity Federation — short-lived OIDC tokens instead of long-lived service account keys
+- Docker images are immutable snapshots tagged by commit SHA — enables instant rollbacks
+- Artifact Registry stores every image ever built — full deploy history
+- CI PostgreSQL service containers spin up fresh for each run, torn down after
+- `prisma generate` must run in CI before type check — generated client isn't committed to repo
+- `exports.default` vs `module.exports` — Prisma config requires the latter for CommonJS
+
+---
+
+### Session 11 — May 16, 2026
+
+**Completed:**
+- Installed `socket.io` on the backend
+- Created `src/lib/socket.ts` — exports a shared `Server` instance to avoid circular dependencies
+- Updated `src/index.ts` — creates HTTP server explicitly, attaches Socket.io with CORS config, connection/disconnect logging
+- Added `io.emit('activity', ...)` to register and login controllers in `auth.controller.ts`
+- Installed `socket.io-client` in the React frontend
+- Created `client/src/pages/DashboardPage.tsx` — live activity feed with green/red connection indicator, real-time event rendering
+- Wired `DashboardPage` into `App.tsx` replacing the placeholder div
+- Fixed `RegisterPage.tsx` — was fetching `/api/users` instead of `/api/auth/register`
+- Removed stray `prisma.config.ts` (duplicate of `prisma.config.js`)
+
+**Outstanding / Next Session:**
+- Logout button on `DashboardPage` — currently no way to log out from the UI
+- Basic navigation between pages
+
+**Commit:** feat: WebSocket server with real-time activity feed
 ---
 
 ## Technical Decisions Log
@@ -274,6 +294,8 @@
 | May 13 | tsconfig outDir | `./dist` with `rootDir: ./src` | Ensures compiled output lands directly in dist/ not dist/src/ |
 | May 16 | CI/CD auth | Workload Identity Federation over service account JSON key | Org policy blocked key creation; WIF is more secure anyway — no long-lived credentials |
 | May 16 | Dockerfile build | Build TypeScript inside Docker over pre-building locally | Ensures image is always built from source; no dependency on local dist/ |
+| May 16 | Socket.io instance location | src/lib/socket.ts shared module | Controllers import from lib, not index.ts — avoids circular dependency |
+| May 16 | Socket.io server attachment | io.attach(httpServer, options) in index.ts | socket.ts constructs io first; index.ts attaches to HTTP server after creation |
 
 ---
 
@@ -308,7 +330,8 @@ devops-dashboard/
 │   │   ├── AppError.ts
 │   │   ├── jwt.ts
 │   │   ├── logger.ts
-│   │   └── prisma.ts
+│   │   ├── prisma.ts
+│   │   └── socket.ts
 │   ├── middleware/
 │   │   ├── auth.ts
 │   │   ├── errorHandler.ts
@@ -329,6 +352,7 @@ devops-dashboard/
 │       │   ├── authContext.tsx
 │       │   └── useAuth.ts
 │       ├── pages/
+│       │   ├── DashboardPage.tsx
 │       │   ├── LoginPage.tsx
 │       │   └── RegisterPage.tsx
 │       └── App.tsx
@@ -344,5 +368,5 @@ devops-dashboard/
 ├── Dockerfile
 ├── .dockerignore
 ├── jest.config.js
-└── prisma.config.ts
+└── prisma.config.js
 ```
