@@ -103,3 +103,5 @@ jobs:
           service: ${{ env.SERVICE }}
           region: ${{ env.REGION }}
           image: ${{ env.IMAGE }}:${{ github.sha }}
+          env_vars: |
+            REDIS_URL=${{ secrets.REDIS_URL }}
