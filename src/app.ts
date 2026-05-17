@@ -6,7 +6,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { errorHandler } from './middleware/errorHandler';
 import logger from './lib/logger'
-
+import prisma from './lib/prisma';
+import redis from './lib/redis';
 
 export const app = express();
 
@@ -33,6 +34,28 @@ app.use('/api/users', userRoutes)
 app.use('/api/auth', authRoutes)
 app.use(errorHandler)
 
-app.get('/health', (req: Request, res: Response) => {
-    res.json({ status: 'healthy', timestamp: new Date().toISOString() })
-})
+app.get('/health', async (req: Request, res: Response) => {
+  const health: Record<string, string> = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+  };
+
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    health.database = 'healthy';
+  } catch {
+    health.database = 'unhealthy';
+    health.status = 'degraded';
+  }
+
+  try {
+    await redis.ping();
+    health.redis = 'healthy';
+  } catch {
+    health.redis = 'unhealthy';
+    health.status = 'degraded';
+  }
+
+  const statusCode = health.status === 'healthy' ? 200 : 503;
+  res.status(statusCode).json(health);
+});
