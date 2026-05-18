@@ -94,7 +94,7 @@ export async function getMe(req: Request, res: Response, next: NextFunction) {
 
     const cached = await redis.get(`user:${userId}`);
     if (cached) {
-      return res.json({ data: JSON.parse(cached), source: 'cache' });
+      return res.json({ data: JSON.parse(cached) });
     }
 
     const user = await prisma.user.findUniqueOrThrow({
@@ -104,7 +104,7 @@ export async function getMe(req: Request, res: Response, next: NextFunction) {
 
     await redis.set(`user:${userId}`, JSON.stringify(user), 'EX', 300);
 
-    res.json({ data: user, source: 'db' });
+    res.json({ data: user });
   } catch (err: unknown) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
       return next(new AppError(404, 'User not found'));
