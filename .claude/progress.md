@@ -2,11 +2,12 @@
 
 ## Current Status
 
-**Phase:** Phase 3 — Advanced Features
-**Current Week:** Week 12 (in progress)
-**Last Updated:** May 17, 2026
+**Phase:** Phase 3 — Complete
+**Current Week:** Week 12 (complete)
+**Last Updated:** May 18, 2026
 **Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) + Upstash (Redis) — zero cost stack
 **Production URL:** https://devops-dashboard-985792054692.us-east1.run.app
+**Swagger UI:** https://devops-dashboard-985792054692.us-east1.run.app/api/docs
 
 ---
 
@@ -20,7 +21,7 @@
 
 ### Phase 2: Production Quality (Weeks 5–8)
 - [x] **Week 5:** Error handling middleware, structured logging, input validation
-- [x] **Week 6:** Testing suite (unit, integration, component — 70%+ coverage)
+- [x] **Week 6:** Testing suite (unit, integration, component — 94% coverage)
 - [x] **Week 7:** Docker + GCP Cloud Run + Supabase deployment
 - [x] **Week 8:** CI/CD pipeline with GitHub Actions, automated tests
 
@@ -28,7 +29,7 @@
 - [x] **Week 9:** WebSocket server, real-time dashboard updates
 - [x] **Week 10:** Redis caching, rate limiting, cache invalidation
 - [x] **Week 11:** Docker Compose, enhanced health checks, Upstash Redis, Sentry error tracking
-- [ ] **Week 12:** Docs, ADRs, API docs, technical blog post
+- [x] **Week 12:** Swagger/OpenAPI docs, README, ADRs, blog post, debug cleanup
 
 ---
 
@@ -83,28 +84,27 @@
 - **Commits:** `feat: Docker Compose for local Redis dev setup`, `feat: Sentry error tracking integration`
 
 ### Session 15 — May 17, 2026
-
-**Completed:**
-- Installed `swagger-jsdoc`, `swagger-ui-express` + type declarations
-- Created `src/lib/swagger.ts` — OpenAPI 3.0 spec with production + local servers
-- Added Swagger UI route to `app.ts` (`/api/docs`)
-- Fixed `app.ts` — removed duplicate `/health` route, removed `/test-error` route, corrected middleware ordering (cors/json/cookieParser before Swagger)
-- Added missing `res.status(statusCode).json(health)` to health check
-- Annotated `src/routes/auth.routes.ts` — 4 endpoints fully documented
-- Annotated `src/routes/user.routes.ts` — 5 endpoints fully documented
-- Fixed CI type check failure — committed updated `package-lock.json` with swagger type declarations
-- Swagger UI live in production at `/api/docs`
-- Created `README.md` — architecture diagram (Mermaid), tech stack table, features, local setup, API reference, deployment overview, key decisions, project structure
-- Created `.env.example`
+- Swagger/OpenAPI live in production, README with Mermaid diagram, .env.example
 - **Commits:** `feat: Swagger/OpenAPI documentation`, `docs: add README and .env.example`
 
-**Key concepts covered:**
-- Swagger/OpenAPI 3.0 JSDoc annotation format in route files
-- `swagger-jsdoc` scans `apis: ['./src/routes/*.ts']` for `@swagger` comments
-- `securitySchemes.bearerAuth` wires up the lock icon on protected routes
-- Swagger UI server dropdown — production vs local development
-- Middleware ordering matters for Swagger — core middleware must register before `/api/docs`
-- `package-lock.json` must be committed when adding new packages or CI won't find them
+### Session 16 — May 18, 2026
+
+**Completed:**
+- 6 Architecture Decision Records written and committed to `docs/adr/`
+  - ADR-001: Prisma v7 explicit database adapter
+  - ADR-002: JWT authentication with httpOnly cookie refresh tokens
+  - ADR-003: Redis-backed rate limiting
+  - ADR-004: Workload Identity Federation for CI/CD
+  - ADR-005: Supabase over GCP Cloud SQL
+  - ADR-006: Express app and HTTP server split for testability
+- Removed `source: 'db'` / `source: 'cache'` debug fields from `/me` response
+- Technical blog post written — saved to `docs/blog-post.md` (placeholder, needs full review before publishing)
+- Context files updated with next steps
+
+**Commits:**
+- `docs: add architecture decision records (ADR-001 through ADR-006)`
+- `chore: remove debug source field from /me response`
+- `chore: update session context files — Week 12`
 
 ---
 
@@ -236,6 +236,14 @@ devops-dashboard/
 ├── dist/
 │   (compiled output — gitignored)
 ├── docs/
+│   ├── adr/
+│   │   ├── 001-prisma-v7-adapter.md
+│   │   ├── 002-jwt-httponly-cookies.md
+│   │   ├── 003-redis-rate-limiting.md
+│   │   ├── 004-workload-identity-federation.md
+│   │   ├── 005-supabase-over-cloud-sql.md
+│   │   └── 006-app-server-split.md
+│   ├── blog-post.md
 │   └── decisions.md
 ├── .claude/
 │   ├── instructions.md
@@ -252,8 +260,9 @@ devops-dashboard/
 └── prisma.config.js
 ```
 
-## Outstanding / Next Session
+## Outstanding / Next Sessions
 
-- Week 12 remaining: ADRs, technical blog post
-- Remove `source: 'db'` / `source: 'cache'` debug fields from /me response before final polish
-- Remove `.claude/instructions.md` when project is 100% complete
+1. **Blog post review** — read `docs/blog-post.md` carefully before publishing anywhere
+2. **Personal website planning** — new project, needs a full planning session (stack, design, content, hosting)
+3. **Dashboard enhancements planning** — plan feature additions before implementing (GitHub API, Jira API, more widgets)
+4. **Cleanup** — remove `.claude/instructions.md` from this repo once blog post is finalized and published

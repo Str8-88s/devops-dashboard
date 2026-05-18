@@ -59,30 +59,51 @@ git push
 
 **Type:** Team Metrics & Developer Tools Platform
 
-**Why:**
-- Directly relevant to current SDET/healthcare IT work
-- Less saturated than typical portfolio projects
-- Demonstrates understanding of development workflows, testing infrastructure, team tooling
-- Can actually be used on current team (built-in interview story)
+**Status:** Week 12 complete. Core project finished. Enhancements and personal site are next phases.
 
 **Tech Stack:**
 - Frontend: React + TypeScript
 - Backend: Node.js + Express + TypeScript
 - Database: PostgreSQL + Prisma ORM
-- Cloud: GCP Cloud Run + Cloud SQL
+- Cloud: GCP Cloud Run + Supabase
 - Real-time: Socket.io
-- Caching: Redis
+- Caching: Redis (Upstash)
 - CI/CD: GitHub Actions + Docker
 
-**Key Features:**
+**Key Features Completed:**
 - JWT authentication with refresh tokens
 - Role-based access control
 - Real-time data visualization
-- GitHub API + Jira API integration
 - Structured error handling and logging
-- 70%+ test coverage (Jest, Supertest, React Testing Library)
-- Production deployment with monitoring
-- Full documentation and ADRs
+- 94% test coverage (Jest, Supertest)
+- Production deployment with monitoring (Sentry)
+- Swagger/OpenAPI documentation
+- Full README with architecture diagram
+- 6 Architecture Decision Records (ADRs)
+
+---
+
+## Pending Notes — Next Steps
+
+### 1. Blog Post
+- `docs/blog-post.md` is a strong placeholder
+- **Must be reviewed again before publishing** — do not post as-is without a full read-through
+- Publish on personal site first, then cross-post to LinkedIn
+
+### 2. Personal Website (Next Project)
+- Build a personal site to host the blog post and showcase the portfolio
+- Needs full planning session before starting — stack, design, content, hosting
+- Blog post becomes the first piece of content on launch
+- LinkedIn article follows after the site is live ("full version on my site")
+
+### 3. Dashboard Enhancements
+- The DevOps Dashboard needs a planning session for feature additions
+- Potential directions: GitHub API integration, Jira API integration, more dashboard widgets, team metrics features
+- Plan enhancements before implementing — don't add features without a clear roadmap
+
+### 4. Cleanup
+- Remove `.claude/instructions.md` from the dashboard repo once the blog post is finalized and published
+- This signals the project is fully complete
 
 ---
 
