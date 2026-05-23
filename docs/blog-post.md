@@ -1,8 +1,8 @@
 # What I Learned Building a Production Node.js API From Scratch
 
-I've been working as an SDET in healthcare IT for a while now — writing test automation frameworks, building internal tooling, keeping CI pipelines green. Strong JavaScript background, comfortable with SQL, familiar with the full stack in theory. But I'd never built a production backend from the ground up and owned every decision myself.
+I've been working as an SDET for 3 years — writing test automation frameworks, building internal tooling, keeping CI pipelines green. Strong JavaScript background, comfortable with SQL, familiar with the full stack in theory. But I'd never built a production backend from the ground up and owned every decision myself.
 
-So I did. Over the past several weeks I built a DevOps Dashboard — a team metrics and developer tools platform — using React, TypeScript, Node.js, Express, PostgreSQL, Redis, Socket.io, and Docker, deployed to Google Cloud Run via GitHub Actions. The kind of project where you can't copy someone else's architecture decisions because you have to make them yourself.
+So I did. Over the past month I built a DevOps Dashboard — a team metrics and developer tools platform — using React, TypeScript, Node.js, Express, PostgreSQL, Redis, Socket.io, and Docker, deployed to Google Cloud Run via GitHub Actions. The kind of project where you can't copy someone else's architecture decisions because you have to make them yourself.
 
 This isn't a tutorial. It's an honest account of what actually cost me time, what I'd do differently, and what I understand now that I didn't before.
 
@@ -144,7 +144,7 @@ The framing I'd use now: an SDET background doesn't mean you write tests instead
 
 The project is deployed and running. 94% test coverage. Automated CI/CD. Structured logging, centralized error handling, Sentry for production error tracking, Redis caching and rate limiting, real-time updates via Socket.io, and full API documentation via Swagger.
 
-The architecture decisions are documented in [ADRs](docs/adr/) — not because anyone required it, but because "why did I make this choice" is a more interesting question than "what did I build."
+The architecture decisions are documented in [ADRs](https://github.com/Str8-88s/devops-dashboard/tree/main/docs/adr) — not because anyone required it, but because "why did I make this choice" is a more interesting question than "what did I build."
 
 The code is at [github.com/Str8-88s/devops-dashboard](https://github.com/Str8-88s/devops-dashboard).
 
