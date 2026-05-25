@@ -367,3 +367,38 @@ Decision: Express route ordering
 Choice: Routes registered before errorHandler, health + test routes above errorHandler
 Alternatives considered: Any order
 Why: Express runs middleware in registration order. Routes registered after errorHandler never reach it for error handling — thrown errors propagate to the next error handler registered, which must come after all routes.
+
+---
+
+Decision: GitHub API client
+Choice: Native fetch over Octokit
+Alternatives considered: Octokit SDK
+Why: No extra dependency. fetch is built into Node 18+. The workflow runs endpoint is a single REST call — Octokit adds abstraction with no benefit at this scale.
+
+---
+
+Decision: GitHub authentication
+Choice: Personal access token stored in .env
+Alternatives considered: GitHub App, OAuth
+Why: Simple, free, sufficient for read-only access to a single repo. Token is server-side only — never exposed to the client. GitHub App would be appropriate for a multi-user or multi-repo product.
+
+---
+
+Decision: GitHub cache key
+Choice: github:workflow_runs
+Alternatives considered: —
+Why: Consistent with existing Redis key naming convention (resource:descriptor). Clear and collision-safe.
+
+---
+
+Decision: GitHub cache TTL
+Choice: 5 minutes (300 seconds)
+Alternatives considered: 1 minute, 15 minutes
+Why: Matches /me endpoint TTL. Workflow runs don't change frequently enough to justify a shorter TTL. Consistent caching strategy across the API.
+
+---
+
+Decision: GitHub route auth
+Choice: authenticate middleware on all /api/github routes
+Alternatives considered: Public endpoint
+Why: Consistent with all other data endpoints — only authenticated users access dashboard data. Keeps the personal access token one step further from unauthenticated exposure.

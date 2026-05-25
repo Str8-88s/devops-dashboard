@@ -2,9 +2,9 @@
 
 ## Current Status
 
-**Phase:** Phase 3 — Complete
-**Current Week:** Week 12 (complete)
-**Last Updated:** May 18, 2026
+**Phase:** Phase 4 — Dashboard Enhancements
+**Current Week:** Week 13 (in progress)
+**Last Updated:** May 25, 2026
 **Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) + Upstash (Redis) — zero cost stack
 **Production URL:** https://devops-dashboard-985792054692.us-east1.run.app
 **Swagger UI:** https://devops-dashboard-985792054692.us-east1.run.app/api/docs
@@ -30,6 +30,9 @@
 - [x] **Week 10:** Redis caching, rate limiting, cache invalidation
 - [x] **Week 11:** Docker Compose, enhanced health checks, Upstash Redis, Sentry error tracking
 - [x] **Week 12:** Swagger/OpenAPI docs, README, ADRs, blog post, debug cleanup
+
+### Phase 4: Enhancements (Week 13+)
+- [x] **Week 13:** GitHub API integration — workflow runs endpoint + dashboard widget
 
 ---
 
@@ -88,23 +91,16 @@
 - **Commits:** `feat: Swagger/OpenAPI documentation`, `docs: add README and .env.example`
 
 ### Session 16 — May 18, 2026
-
-**Completed:**
 - 6 Architecture Decision Records written and committed to `docs/adr/`
-  - ADR-001: Prisma v7 explicit database adapter
-  - ADR-002: JWT authentication with httpOnly cookie refresh tokens
-  - ADR-003: Redis-backed rate limiting
-  - ADR-004: Workload Identity Federation for CI/CD
-  - ADR-005: Supabase over GCP Cloud SQL
-  - ADR-006: Express app and HTTP server split for testability
-- Removed `source: 'db'` / `source: 'cache'` debug fields from `/me` response
-- Technical blog post written — saved to `docs/blog-post.md` (placeholder, needs full review before publishing)
-- Context files updated with next steps
+- Removed debug fields from `/me` response
+- Technical blog post written — saved to `docs/blog-post.md`
+- **Commits:** `docs: add architecture decision records (ADR-001 through ADR-006)`, `chore: remove debug source field from /me response`, `chore: update session context files — Week 12`
 
-**Commits:**
-- `docs: add architecture decision records (ADR-001 through ADR-006)`
-- `chore: remove debug source field from /me response`
-- `chore: update session context files — Week 12`
+### Session 17 — May 25, 2026
+- GitHub API integration planning session
+- `GET /api/github/workflows` endpoint — fetches 10 most recent CI/CD runs, Redis cached (5 min TTL), auth protected
+- CI/CD Runs widget added to DashboardPage — color-coded by conclusion, links to GitHub Actions run, duration displayed
+- **Commit:** `feat: GitHub Actions workflow runs widget`
 
 ---
 
@@ -162,6 +158,11 @@
 | May 17 | Sentry sample rate | tracesSampleRate: 1.0 | 100% capture appropriate for low-traffic portfolio project |
 | May 17 | API documentation | Swagger/OpenAPI + README | Swagger for technical exploration, README for everyone else |
 | May 17 | Swagger annotation location | Route files (`*.routes.ts`) | Co-located with the routes they describe; swagger-jsdoc scans via glob |
+| May 25 | GitHub API client | Native fetch over Octokit | No extra dependency; fetch is built into Node 18+; straightforward for REST endpoints |
+| May 25 | GitHub auth | Personal access token in .env | Simple, free, sufficient for read-only repo data; token never exposed to client |
+| May 25 | GitHub cache key | `github:workflow_runs` | Consistent with existing Redis key naming convention |
+| May 25 | GitHub cache TTL | 5 minutes | Matches /me endpoint TTL; workflow runs don't change frequently enough to justify shorter TTL |
+| May 25 | GitHub route auth | authenticate middleware | Workflow data is behind auth — consistent with all other protected routes |
 
 ---
 
@@ -196,6 +197,7 @@ devops-dashboard/
 │   │   └── setup.ts
 │   ├── controllers/
 │   │   ├── auth.controller.ts
+│   │   ├── github.controller.ts
 │   │   └── user.controller.ts
 │   ├── lib/
 │   │   ├── AppError.ts
@@ -213,6 +215,7 @@ devops-dashboard/
 │   │   └── validate.ts
 │   ├── routes/
 │   │   ├── auth.routes.ts
+│   │   ├── github.routes.ts
 │   │   └── user.routes.ts
 │   ├── schemas/
 │   │   ├── auth.schema.ts
@@ -262,7 +265,8 @@ devops-dashboard/
 
 ## Outstanding / Next Sessions
 
-1. **Blog post review** — read `docs/blog-post.md` carefully before publishing anywhere
-2. **Personal website planning** — new project, needs a full planning session (stack, design, content, hosting)
-3. **Dashboard enhancements planning** — plan feature additions before implementing (GitHub API, Jira API, more widgets)
-4. **Cleanup** — remove `.claude/instructions.md` from this repo once blog post is finalized and published
+1. **Deploy GitHub integration to production** — push triggers CI/CD; add GITHUB_TOKEN + repo env vars to Cloud Run
+2. **Next widget** — commit activity, repo stats, or success rate summary (decide next session)
+3. **Blog post review** — read `docs/blog-post.md` carefully before publishing anywhere
+4. **Personal website** — go live June 1st with `thomaswitherow.dev`
+5. **Cleanup** — remove `.claude/instructions.md` from this repo once blog post is finalized and published
