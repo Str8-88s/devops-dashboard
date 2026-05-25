@@ -10,6 +10,7 @@ import prisma from './lib/prisma';
 import redis from './lib/redis';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './lib/swagger';
+import githubRouter from './routes/github.routes';
 
 export const app = express();
 
@@ -37,6 +38,7 @@ app.use((req, res, next) => {
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/github', githubRouter);
 
 app.get('/health', async (req: Request, res: Response) => {
   const health: Record<string, string> = {

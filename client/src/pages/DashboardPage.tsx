@@ -3,6 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { io, Socket } from 'socket.io-client'
 import { useAuth } from '../lib/useAuth'
 
+
+interface WorkflowRun {
+  id: number
+  name: string
+  status: string
+  conclusion: string | null
+  createdAt: string
+  updatedAt: string
+  url: string
+  duration: number | null
+}
+
 interface ActivityEvent {
   id: string
   type: string
@@ -15,8 +27,12 @@ let socket: Socket | null = null
 export default function DashboardPage() {
   const [events, setEvents] = useState<ActivityEvent[]>([])
   const [connected, setConnected] = useState(false)
-  const { logout } = useAuth()
+  const [workflowRuns, setWorkflowRuns] = useState<WorkflowRun[]>([])
+  const [workflowsLoading, setWorkflowsLoading] = useState(true)
+  const { logout, accessToken } = useAuth()
   const navigate = useNavigate()
+  
+  
 
   useEffect(() => {
     socket = io('http://localhost:3000', {
@@ -39,6 +55,21 @@ export default function DashboardPage() {
     }
   }, [])
 
+  useEffect(() => {
+  if (!accessToken) return
+
+  fetch('http://localhost:3000/api/github/workflows', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+    .then(res => res.json())
+    .then(data => {
+      setWorkflowRuns(data)
+      setWorkflowsLoading(false)
+    })
+    .catch(() => setWorkflowsLoading(false))
+}, [accessToken])
   const handleLogout = async () => {
     logout()
     navigate('/login')
@@ -166,6 +197,63 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+                {/* Workflow Runs */}
+        <div style={{ marginTop: '2rem' }}>
+          <h2 style={{
+            fontSize: '0.7rem',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            color: '#475569',
+            marginBottom: '1rem',
+          }}>
+            CI/CD Runs
+          </h2>
+
+          {workflowsLoading ? (
+            <div style={{ color: '#334155', fontSize: '0.875rem', padding: '2rem 0' }}>
+              Loading...
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {workflowRuns.map(run => (
+                <a
+                  key={run.id}
+                  href={run.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ textDecoration: 'none' }}
+                >
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '140px 80px 80px 1fr',
+                    gap: '1rem',
+                    padding: '0.75rem 1rem',
+                    background: '#0f172a',
+                    border: '1px solid #1e293b',
+                    borderLeft: `3px solid ${run.conclusion === 'success' ? '#22c55e' : run.conclusion === 'failure' ? '#ef4444' : '#f59e0b'}`,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                  }}>
+                    <span style={{ color: '#475569' }}>
+                      {new Date(run.createdAt).toLocaleDateString()}
+                    </span>
+                    <span style={{
+                      color: run.conclusion === 'success' ? '#22c55e' : run.conclusion === 'failure' ? '#ef4444' : '#f59e0b',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}>
+                      {run.conclusion ?? run.status}
+                    </span>
+                    <span style={{ color: '#475569' }}>
+                      {run.duration != null ? `${run.duration}s` : '—'}
+                    </span>
+                    <span style={{ color: '#cbd5e1' }}>{run.name}</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>  
       </div>
     </div>
   )
