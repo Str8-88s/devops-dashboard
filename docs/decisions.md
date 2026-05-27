@@ -402,3 +402,24 @@ Decision: GitHub route auth
 Choice: authenticate middleware on all /api/github routes
 Alternatives considered: Public endpoint
 Why: Consistent with all other data endpoints — only authenticated users access dashboard data. Keeps the personal access token one step further from unauthenticated exposure.
+
+---
+
+Decision: Donut chart implementation
+Choice: CSS conic-gradient over Recharts
+Alternatives considered: Recharts PieChart, Chart.js via canvas
+Why: Recharts throws require_isUnsafeProperty error in Vite build — incompatible without additional config. CSS conic-gradient has zero dependencies, renders instantly, and is fully controllable via inline styles. No library needed for a single static visualization.
+
+---
+
+Decision: PAT encryption at rest
+Choice: Plaintext storage with TODO comment, encryption deferred
+Alternatives considered: AES-256 encryption with key stored in env, bcrypt (one-way, not suitable)
+Why: Encryption requires a key management strategy — where the key lives, how it rotates, what happens on key compromise. That's a real infrastructure decision that deserves its own planning session. For a portfolio project, explicitly flagging the gap is more honest and more impressive than a half-implemented scheme. TODO comment ensures it's not forgotten.
+
+---
+
+Decision: Per-user repo config approach
+Choice: TrackedRepo table (userId, owner, repo, accessToken nullable)
+Alternatives considered: Hardcoded env vars, user-level JSON config field
+Why: Enables multi-tenancy from the start — each user configures their own repo. No throwaway code when multi-repo support is added later. Consistent with existing Prisma/PostgreSQL patterns in the codebase.

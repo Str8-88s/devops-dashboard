@@ -4,7 +4,7 @@
 
 **Phase:** Phase 4 — Dashboard Enhancements
 **Current Week:** Week 13 (in progress)
-**Last Updated:** May 25, 2026
+**Last Updated:** May 27, 2026
 **Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) + Upstash (Redis) — zero cost stack
 **Production URL:** https://devops-dashboard-985792054692.us-east1.run.app
 **Swagger UI:** https://devops-dashboard-985792054692.us-east1.run.app/api/docs
@@ -33,6 +33,8 @@
 
 ### Phase 4: Enhancements (Week 13+)
 - [x] **Week 13:** GitHub API integration — workflow runs endpoint + dashboard widget
+- [x] **Week 13:** Pipeline health donut widget
+- [ ] **Week 14:** Per-user GitHub repo config + commit activity heatmap widget
 
 ---
 
@@ -102,6 +104,14 @@
 - CI/CD Runs widget added to DashboardPage — color-coded by conclusion, links to GitHub Actions run, duration displayed
 - **Commit:** `feat: GitHub Actions workflow runs widget`
 
+### Session 18 — May 27, 2026
+- Deployed GitHub integration to production — added GITHUB_TOKEN, GITHUB_REPO_OWNER, GITHUB_REPO_NAME to Cloud Run env vars
+- Verified endpoint live at production URL (200 OK, real data)
+- Pipeline health donut widget built and shipped — CSS conic-gradient donut, run history dots, passed/failed counts, color-coded by threshold
+- Dropped Recharts (Vite compatibility issue) in favor of pure CSS donut
+- Planned per-user GitHub repo config feature (Option B) — full scope: TrackedRepo table, per-user PAT, settings panel, commit heatmap
+- **Commit:** `feat: pipeline health donut widget`
+
 ---
 
 ## Technical Decisions Log
@@ -163,6 +173,9 @@
 | May 25 | GitHub cache key | `github:workflow_runs` | Consistent with existing Redis key naming convention |
 | May 25 | GitHub cache TTL | 5 minutes | Matches /me endpoint TTL; workflow runs don't change frequently enough to justify shorter TTL |
 | May 25 | GitHub route auth | authenticate middleware | Workflow data is behind auth — consistent with all other protected routes |
+| May 27 | Donut chart implementation | CSS conic-gradient over Recharts | Recharts incompatible with Vite build (require_isUnsafeProperty error); CSS donut has zero dependencies |
+| May 27 | PAT encryption | Plaintext + TODO comment, deferred | Portfolio project; encryption requires key management strategy; flagged explicitly is more honest than half-implemented |
+| May 27 | Per-user repo config | TrackedRepo table approach | Enables multi-tenancy from the start; no throwaway code |
 
 ---
 
@@ -265,8 +278,14 @@ devops-dashboard/
 
 ## Outstanding / Next Sessions
 
-1. **Deploy GitHub integration to production** — push triggers CI/CD; add GITHUB_TOKEN + repo env vars to Cloud Run
-2. **Next widget** — commit activity, repo stats, or success rate summary (decide next session)
+1. **Per-user GitHub repo config + commit heatmap** — full build order:
+   - `TrackedRepo` table + Prisma migration
+   - CRUD endpoints (`GET/POST/DELETE /api/repos`)
+   - Update GitHub controller to pull repo from DB instead of env vars
+   - Settings panel in dashboard UI (owner/repo input + optional PAT)
+   - Commit activity endpoint (`GET /api/github/commits`)
+   - Commit activity heatmap widget
+   - PAT stored plaintext for now — TODO comment, encryption deferred
+2. **Personal website go-live** — purchase `thomaswitherow.dev` June 1st, Formspree production verify
 3. **Blog post review** — read `docs/blog-post.md` carefully before publishing anywhere
-4. **Personal website** — go live June 1st with `thomaswitherow.dev`
-5. **Cleanup** — remove `.claude/instructions.md` from this repo once blog post is finalized and published
+4. **Cleanup** — remove `.claude/instructions.md` from this repo once blog post is finalized and published
