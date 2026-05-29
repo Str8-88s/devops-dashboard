@@ -423,3 +423,49 @@ Decision: Per-user repo config approach
 Choice: TrackedRepo table (userId, owner, repo, accessToken nullable)
 Alternatives considered: Hardcoded env vars, user-level JSON config field
 Why: Enables multi-tenancy from the start — each user configures their own repo. No throwaway code when multi-repo support is added later. Consistent with existing Prisma/PostgreSQL patterns in the codebase.
+
+---
+
+Decision: TrackedRepo userId constraint
+Choice: @unique on userId
+Why: One repo per user enforced at the database level. Upsert pattern handles both create and update in a single operation.
+
+---
+
+Decision: GitHub cache key scoping
+Choice: github:workflow_runs:${userId} and github:commit_activity:${userId}
+Why: Different users track different repos — a shared cache key would return the wrong repo's data to other users.
+
+---
+
+Decision: Commit activity window
+Choice: 90 days
+Alternatives considered: 365 days (GitHub default)
+Why: 90 days is sufficient for portfolio demo purposes. 365 days requires pagination across multiple API calls and broader rate limit budget.
+
+---
+
+Decision: Commit activity scope
+Choice: Single configured repo only
+Alternatives considered: All repos via GitHub events API
+Why: GitHub's contribution graph spans all repos; this dashboard is intentionally repo-scoped. The distinction is documented — it's a feature boundary, not a bug.
+
+---
+
+Decision: Heatmap orientation
+Choice: Columns = weeks, rows = days of week (GitHub-style)
+Alternatives considered: Simple left-to-right row layout
+Why: Matches the mental model users already have from GitHub's contribution graph. Immediately recognizable layout.
+
+---
+
+Decision: Autofill prevention
+Choice: autoComplete="off" on text inputs, autoComplete="new-password" on password input
+Why: Browser autofill was populating the repo owner/name fields with saved email/password credentials. new-password is the only value browsers reliably respect for disabling password autofill.
+
+---
+
+Decision: PAT storage
+Choice: Plaintext with TODO comment
+Alternatives considered: AES-256 with env key, bcrypt (unsuitable — one-way)
+Why: Encryption requires key management strategy. Flagging explicitly is more honest than half-implemented encryption. TODO ensures it's not forgotten before any real production use.

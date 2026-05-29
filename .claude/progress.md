@@ -3,8 +3,8 @@
 ## Current Status
 
 **Phase:** Phase 4 — Dashboard Enhancements
-**Current Week:** Week 13 (in progress)
-**Last Updated:** May 27, 2026
+**Current Week:** Week 14 (in progress)
+**Last Updated:** May 29, 2026
 **Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) + Upstash (Redis) — zero cost stack
 **Production URL:** https://devops-dashboard-985792054692.us-east1.run.app
 **Swagger UI:** https://devops-dashboard-985792054692.us-east1.run.app/api/docs
@@ -34,7 +34,7 @@
 ### Phase 4: Enhancements (Week 13+)
 - [x] **Week 13:** GitHub API integration — workflow runs endpoint + dashboard widget
 - [x] **Week 13:** Pipeline health donut widget
-- [ ] **Week 14:** Per-user GitHub repo config + commit activity heatmap widget
+- [x] **Week 14:** Per-user repo config + commit activity heatmap widget
 
 ---
 
@@ -42,7 +42,6 @@
 
 ### Session 1 — May 3, 2026
 - Git initialized, GitHub repo created, Express + TypeScript server running
-- `.claude/` context strategy established
 
 ### Session 2 — May 4, 2026
 - Zod validation, CRUD routes, Prisma v7 + PostgreSQL setup
@@ -86,31 +85,33 @@
 
 ### Session 14 — May 17, 2026
 - Docker Compose, Sentry error tracking integration, route ordering fix in app.ts
-- **Commits:** `feat: Docker Compose for local Redis dev setup`, `feat: Sentry error tracking integration`
 
 ### Session 15 — May 17, 2026
 - Swagger/OpenAPI live in production, README with Mermaid diagram, .env.example
-- **Commits:** `feat: Swagger/OpenAPI documentation`, `docs: add README and .env.example`
 
 ### Session 16 — May 18, 2026
-- 6 Architecture Decision Records written and committed to `docs/adr/`
-- Removed debug fields from `/me` response
-- Technical blog post written — saved to `docs/blog-post.md`
-- **Commits:** `docs: add architecture decision records (ADR-001 through ADR-006)`, `chore: remove debug source field from /me response`, `chore: update session context files — Week 12`
+- 6 ADRs written, debug cleanup, technical blog post written
+- **Commit:** `docs: add architecture decision records (ADR-001 through ADR-006)`
 
 ### Session 17 — May 25, 2026
-- GitHub API integration planning session
-- `GET /api/github/workflows` endpoint — fetches 10 most recent CI/CD runs, Redis cached (5 min TTL), auth protected
-- CI/CD Runs widget added to DashboardPage — color-coded by conclusion, links to GitHub Actions run, duration displayed
+- GitHub API integration — `GET /api/github/workflows`, CI/CD runs widget
 - **Commit:** `feat: GitHub Actions workflow runs widget`
 
 ### Session 18 — May 27, 2026
-- Deployed GitHub integration to production — added GITHUB_TOKEN, GITHUB_REPO_OWNER, GITHUB_REPO_NAME to Cloud Run env vars
-- Verified endpoint live at production URL (200 OK, real data)
-- Pipeline health donut widget built and shipped — CSS conic-gradient donut, run history dots, passed/failed counts, color-coded by threshold
-- Dropped Recharts (Vite compatibility issue) in favor of pure CSS donut
-- Planned per-user GitHub repo config feature (Option B) — full scope: TrackedRepo table, per-user PAT, settings panel, commit heatmap
+- Deployed GitHub integration to production (Cloud Run env vars added)
+- Pipeline health donut widget — CSS conic-gradient, run history dots, passed/failed counts
 - **Commit:** `feat: pipeline health donut widget`
+
+### Session 19 — May 29, 2026
+- `TrackedRepo` table + Prisma migration (`add-tracked-repo`)
+- Repo CRUD endpoints (`GET/POST/DELETE /api/repos`) + `repo.controller.ts` + `repo.routes.ts`
+- GitHub controller updated — pulls repo from DB, falls back to env vars, cache scoped per user
+- Settings page — owner/repo/PAT input, save/remove, loads existing config, autofill disabled
+- Commit activity endpoint (`GET /api/github/commits`) — 90 days, date-keyed counts, Redis cached
+- Commit heatmap widget — GitHub-style grid, month labels (Mar/Apr/May), day labels (Mon/Wed/Fri), color intensity
+- Fixed Vite port conflict (5173 taken by stale node process)
+- Fixed browser caching 304 on `/api/repos` with Cache-Control: no-cache header
+- **Commits:** `feat: per-user repo config, commit heatmap, settings page`, `chore: add recharts to client dependencies`
 
 ---
 
@@ -128,54 +129,41 @@
 | May 4 | Validation placement | Middleware over controllers | Separation of concerns, reusable, controllers receive trusted data |
 | May 4 | API testing | Thunder Client over curl | Avoids PowerShell curl alias issues, lives in VS Code |
 | May 4 | Zod version | v4 | Current release; breaking changes from v3 |
-| May 4 | PostgreSQL setup | Local install over Prisma Postgres | Prisma Postgres v7 connection errors; local matches Cloud SQL path |
 | May 5 | Prisma v7 client init | PrismaPg adapter | v7 requires explicit adapter |
 | May 5 | Prisma connection config | `prisma.config.ts` only | v7 removed `url` from `schema.prisma` |
 | May 5 | Frontend scaffold | Vite + React + TypeScript | Fast dev server, first-class TS support |
-| May 5 | CORS placement | Before routes in `index.ts` | Middleware runs in registration order |
 | May 6 | Token storage | In-memory access token + httpOnly cookie for refresh token | Eliminates XSS exposure |
 | May 6 | Token rotation | Delete old + issue new on every refresh | Replay attacks fail |
 | May 6 | StrictMode | Removed during development | Double-fires useEffect in dev, breaks token rotation |
-| May 6 | useAuth location | Separate file from AuthProvider | Vite Fast Refresh requires components and non-component exports in separate files |
 | May 7 | Logger | Pino over Winston | Faster, JSON by default, ships own types |
-| May 7 | Request logging | Manual middleware over pino-http | pino-http v11 type incompatibility with commonjs + ts-node |
-| May 10 | Test runner | Jest 29 + ts-jest 29 | ts-jest 29 not compatible with Jest 30; versions must match exactly |
-| May 10 | Test execution | `--runInBand` | Prevents cross-suite DB race conditions on shared test database |
-| May 10 | Test DB | Separate `devops_dashboard_test` | Isolates test data from dev; NODE_ENV=test switches connection string |
-| May 10 | App/server split | `app.ts` + `index.ts` | Supertest needs importable app without starting the HTTP server |
+| May 10 | Test runner | Jest 29 + ts-jest 29 | ts-jest 29 not compatible with Jest 30 |
+| May 10 | Test execution | `--runInBand` | Prevents cross-suite DB race conditions |
+| May 10 | App/server split | `app.ts` + `index.ts` | Supertest needs importable app without starting HTTP server |
 | May 10 | Refresh token uniqueness | `jti: randomUUID()` | Tokens signed same second produce identical strings without jti |
-| May 10 | Production database | Supabase over Cloud SQL | Cloud SQL costs ~$12-15/month at idle; Supabase is free PostgreSQL |
-| May 13 | Supabase connection method | Session pooler over direct | Direct uses IPv6; session pooler works over IPv4, compatible with Prisma |
-| May 13 | Docker base image | node:20-alpine | Minimal image size, LTS Node version |
-| May 13 | tsconfig outDir | `./dist` with `rootDir: ./src` | Ensures compiled output lands directly in dist/ not dist/src/ |
-| May 16 | CI/CD auth | Workload Identity Federation | Org policy blocked key creation; WIF is more secure anyway |
-| May 16 | Dockerfile build | Build TypeScript inside Docker | Ensures image is always built from source |
-| May 16 | Socket.io instance location | src/lib/socket.ts shared module | Avoids circular dependency with index.ts |
-| May 16 | Socket.io server attachment | io.attach(httpServer, options) in index.ts | socket.ts constructs io first; index.ts attaches after |
-| May 17 | Redis client | ioredis over official redis package | Better TypeScript support, more reliable reconnection |
-| May 17 | Redis connection | lazyConnect: true | App stays resilient if Redis is down on startup |
-| May 17 | Rate limit key | req.ip directly | Functionally correct; normalizing IPv6-mapped addresses adds complexity |
-| May 17 | Rate limit storage | Redis over in-memory | Survives restarts, works across multiple Cloud Run instances |
-| May 17 | Cache TTL | 5 minutes for /me endpoint | Balances freshness with DB load reduction |
-| May 17 | Cache invalidation | redis.del on update/delete | Prevents stale data; next read repopulates from DB |
-| May 17 | Production Redis | Upstash Pay as You Go | Zero cost at this scale; no refactoring needed |
-| May 17 | Local Redis | Docker Compose | Single command startup, version controlled, no manual docker run |
-| May 17 | Health check | Live dependency checks over static response | Real status — DB SELECT 1 + Redis ping; 503 on degraded |
-| May 17 | Redis test behavior | Skip rate limiting + fail open on cache ops | Tests shouldn't depend on Redis; Redis outage shouldn't break core app |
-| May 17 | Jest exit | --forceExit | ioredis keeps async handles open; forceExit prevents CI hang |
-| May 17 | Error tracking | Sentry over manual logging only | Automatic capture with stack traces, request context, grouping; email alerts on new issues |
-| May 17 | Sentry capture scope | 5xx errors only | 4xx are expected client errors — capturing them adds noise without value |
-| May 17 | Sentry sample rate | tracesSampleRate: 1.0 | 100% capture appropriate for low-traffic portfolio project |
-| May 17 | API documentation | Swagger/OpenAPI + README | Swagger for technical exploration, README for everyone else |
-| May 17 | Swagger annotation location | Route files (`*.routes.ts`) | Co-located with the routes they describe; swagger-jsdoc scans via glob |
-| May 25 | GitHub API client | Native fetch over Octokit | No extra dependency; fetch is built into Node 18+; straightforward for REST endpoints |
-| May 25 | GitHub auth | Personal access token in .env | Simple, free, sufficient for read-only repo data; token never exposed to client |
-| May 25 | GitHub cache key | `github:workflow_runs` | Consistent with existing Redis key naming convention |
-| May 25 | GitHub cache TTL | 5 minutes | Matches /me endpoint TTL; workflow runs don't change frequently enough to justify shorter TTL |
-| May 25 | GitHub route auth | authenticate middleware | Workflow data is behind auth — consistent with all other protected routes |
-| May 27 | Donut chart implementation | CSS conic-gradient over Recharts | Recharts incompatible with Vite build (require_isUnsafeProperty error); CSS donut has zero dependencies |
-| May 27 | PAT encryption | Plaintext + TODO comment, deferred | Portfolio project; encryption requires key management strategy; flagged explicitly is more honest than half-implemented |
-| May 27 | Per-user repo config | TrackedRepo table approach | Enables multi-tenancy from the start; no throwaway code |
+| May 10 | Production database | Supabase over Cloud SQL | Cloud SQL ~$12-15/month idle; Supabase free |
+| May 13 | Supabase connection | Session pooler | IPv4 compatible, works with Prisma prepared statements |
+| May 16 | CI/CD auth | Workload Identity Federation | Org policy blocked key creation; WIF is more secure |
+| May 16 | Socket.io instance | src/lib/socket.ts shared module | Avoids circular dependency with index.ts |
+| May 17 | Redis client | ioredis | Better TypeScript support, reliable reconnection |
+| May 17 | Redis connection | lazyConnect: true | App stays resilient if Redis down on startup |
+| May 17 | Rate limit storage | Redis over in-memory | Works across multiple Cloud Run instances |
+| May 17 | Production Redis | Upstash Pay as You Go | Zero cost at this scale |
+| May 17 | Health check | Live dependency checks | Real status — DB SELECT 1 + Redis ping; 503 on degraded |
+| May 17 | Error tracking | Sentry over manual logging | Automatic capture, stack traces, email alerts |
+| May 17 | Sentry capture scope | 5xx errors only | 4xx are expected client errors |
+| May 25 | GitHub API client | Native fetch over Octokit | No extra dependency; fetch built into Node 18+ |
+| May 25 | GitHub auth | Personal access token in .env | Simple, free, server-side only |
+| May 25 | GitHub cache TTL | 5 minutes | Matches /me endpoint TTL |
+| May 27 | Donut chart | CSS conic-gradient over Recharts | Recharts incompatible with Vite build |
+| May 27 | PAT encryption | Plaintext + TODO comment, deferred | Encryption requires key management strategy — flagged explicitly |
+| May 27 | Per-user repo config | TrackedRepo table | Enables multi-tenancy from the start; no throwaway code |
+| May 29 | TrackedRepo userId | @unique constraint | One repo per user enforced at DB level |
+| May 29 | Repo upsert | prisma.trackedRepo.upsert | Single operation handles both create and update |
+| May 29 | GitHub cache key | `github:workflow_runs:${userId}` | Scoped per user — different users get their own repo data |
+| May 29 | Commit window | 90 days | Sufficient for portfolio demo; GitHub's 365-day graph requires broader API scope |
+| May 29 | Commit scope | Single repo only | GitHub contribution graph spans all repos; this is intentionally repo-scoped |
+| May 29 | Heatmap orientation | Columns = weeks, rows = days | Matches GitHub contribution graph layout |
+| May 29 | Autofill prevention | autoComplete="off" + "new-password" | Browser autofill was populating repo fields with saved credentials |
 
 ---
 
@@ -188,16 +176,11 @@
 - Docker Desktop v29.4.3 ✓
 - gcloud CLI SDK 568.0.0 ✓
 - GitHub repo: `Str8-88s/devops-dashboard` ✓
-- Thunder Client installed ✓
-- Redis for VS Code extension installed ✓
 - Redis: Docker Compose (`docker compose up -d`) — local dev
 - Redis: Upstash (Pay as You Go, us-east1) — production
 - Sentry: devops_dashboard project (Express) ✓
-- GCP Project: `project-21878190-6e72-4ba8-bcc`
-- Artifact Registry: `us-east1-docker.pkg.dev/project-21878190-6e72-4ba8-bcc/devops-dashboard`
 - Production URL: `https://devops-dashboard-985792054692.us-east1.run.app`
 - Swagger UI: `https://devops-dashboard-985792054692.us-east1.run.app/api/docs`
-- TypeScript experience: learning as part of this project
 
 ## File Structure (current)
 
@@ -211,6 +194,7 @@ devops-dashboard/
 │   ├── controllers/
 │   │   ├── auth.controller.ts
 │   │   ├── github.controller.ts
+│   │   ├── repo.controller.ts
 │   │   └── user.controller.ts
 │   ├── lib/
 │   │   ├── AppError.ts
@@ -229,6 +213,7 @@ devops-dashboard/
 │   ├── routes/
 │   │   ├── auth.routes.ts
 │   │   ├── github.routes.ts
+│   │   ├── repo.routes.ts
 │   │   └── user.routes.ts
 │   ├── schemas/
 │   │   ├── auth.schema.ts
@@ -245,31 +230,23 @@ devops-dashboard/
 │       ├── pages/
 │       │   ├── DashboardPage.tsx
 │       │   ├── LoginPage.tsx
-│       │   └── RegisterPage.tsx
+│       │   ├── RegisterPage.tsx
+│       │   └── SettingsPage.tsx
 │       └── App.tsx
 ├── prisma/
+│   ├── migrations/
+│   │   └── 20260529003948_add_tracked_repo/
 │   └── schema.prisma
-├── dist/
-│   (compiled output — gitignored)
 ├── docs/
 │   ├── adr/
-│   │   ├── 001-prisma-v7-adapter.md
-│   │   ├── 002-jwt-httponly-cookies.md
-│   │   ├── 003-redis-rate-limiting.md
-│   │   ├── 004-workload-identity-federation.md
-│   │   ├── 005-supabase-over-cloud-sql.md
-│   │   └── 006-app-server-split.md
 │   ├── blog-post.md
 │   └── decisions.md
 ├── .claude/
 │   ├── instructions.md
 │   └── progress.md
-├── .github/
-│   └── workflows/
-│       └── deploy.yml
+├── .github/workflows/deploy.yml
 ├── docker-compose.yml
 ├── Dockerfile
-├── .dockerignore
 ├── .env.example
 ├── README.md
 ├── jest.config.js
@@ -278,14 +255,8 @@ devops-dashboard/
 
 ## Outstanding / Next Sessions
 
-1. **Per-user GitHub repo config + commit heatmap** — full build order:
-   - `TrackedRepo` table + Prisma migration
-   - CRUD endpoints (`GET/POST/DELETE /api/repos`)
-   - Update GitHub controller to pull repo from DB instead of env vars
-   - Settings panel in dashboard UI (owner/repo input + optional PAT)
-   - Commit activity endpoint (`GET /api/github/commits`)
-   - Commit activity heatmap widget
-   - PAT stored plaintext for now — TODO comment, encryption deferred
-2. **Personal website go-live** — purchase `thomaswitherow.dev` June 1st, Formspree production verify
-3. **Blog post review** — read `docs/blog-post.md` carefully before publishing anywhere
-4. **Cleanup** — remove `.claude/instructions.md` from this repo once blog post is finalized and published
+1. **Deploy to production** — push triggers CI/CD; then run `prisma migrate deploy` against Supabase for the TrackedRepo migration
+2. **Personal site go-live** — purchase `thomaswitherow.dev` June 1st, Formspree production verify
+3. **Blog post review** — read `docs/blog-post.md` carefully before publishing
+4. **Cleanup** — remove `.claude/instructions.md` from this repo once blog post is published
+5. **Future widget ideas** — repo stats card (stars, forks, open issues), success rate trend over time
