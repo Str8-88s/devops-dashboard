@@ -21,6 +21,11 @@ interface ActivityEvent {
   timestamp: string
 }
 
+interface CommitDay {
+  date: string
+  count: number
+}
+
 let socket: Socket | null = null
 
 function PipelineHealth({ runs }: { runs: WorkflowRun[] }) {
@@ -103,11 +108,152 @@ function PipelineHealth({ runs }: { runs: WorkflowRun[] }) {
   )
 }
 
+function CommitHeatmap({ data }: { data: CommitDay[] }) {
+  const max = Math.max(...data.map(d => d.count), 1)
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const DAY_LABELS = ['', 'Mon', '', 'Wed', '', 'Fri', '']
+
+  const getColor = (count: number) => {
+    if (count === 0) return '#1e293b'
+    const intensity = count / max
+    if (intensity < 0.25) return '#166534'
+    if (intensity < 0.5) return '#16a34a'
+    if (intensity < 0.75) return '#22c55e'
+    return '#4ade80'
+  }
+
+  // Build a grid: pad start so first day lands on correct day-of-week
+  const firstDate = new Date(data[0]?.date)
+  const startDow = firstDate.getDay() // 0=Sun
+  
+  // Build flat array of cells with nulls for padding
+  const cells: (CommitDay | null)[] = [
+    ...Array(startDow).fill(null),
+    ...data,
+  ]
+
+  // Chunk into weeks of 7
+  const weeks: (CommitDay | null)[][] = []
+  for (let i = 0; i < cells.length; i += 7) {
+    weeks.push(cells.slice(i, i + 7))
+  }
+
+  // Build month labels: find which week each month first appears in
+  const monthLabels: { label: string; weekIndex: number }[] = []
+  weeks.forEach((week, wi) => {
+    week.forEach(day => {
+      if (!day) return
+      const d = new Date(day.date)
+      if (d.getDate() <= 7) {
+        const label = MONTHS[d.getMonth()]
+        if (!monthLabels.find(m => m.label === label)) {
+          monthLabels.push({ label, weekIndex: wi })
+        }
+      }
+    })
+  })
+
+  const CELL = 12
+  const GAP = 3
+
+  return (
+    <div style={{ marginTop: '2rem' }}>
+      <h2 style={{
+        fontSize: '0.7rem',
+        letterSpacing: '0.15em',
+        textTransform: 'uppercase',
+        color: '#475569',
+        marginBottom: '1rem',
+      }}>
+        Commit Activity
+      </h2>
+      <div style={{
+        background: '#0f172a',
+        border: '1px solid #1e293b',
+        padding: '1.5rem',
+        overflowX: 'auto',
+      }}>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {/* Day labels */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: `${GAP}px`,
+            paddingTop: `${CELL + GAP + 2}px`,
+          }}>
+            {DAY_LABELS.map((label, i) => (
+              <div key={i} style={{
+                height: `${CELL}px`,
+                fontSize: '0.55rem',
+                color: '#475569',
+                display: 'flex',
+                alignItems: 'center',
+                width: '24px',
+              }}>
+                {label}
+              </div>
+            ))}
+          </div>
+
+          {/* Grid */}
+          <div>
+            {/* Month labels */}
+            <div style={{ display: 'flex', marginBottom: '2px', position: 'relative', height: `${CELL}px` }}>
+              {monthLabels.map(({ label, weekIndex }) => (
+                <div key={label} style={{
+                  position: 'absolute',
+                  left: `${weekIndex * (CELL + GAP)}px`,
+                  fontSize: '0.6rem',
+                  color: '#64748b',
+                }}>
+                  {label}
+                </div>
+              ))}
+            </div>
+
+            {/* Weeks */}
+            <div style={{ display: 'flex', gap: `${GAP}px` }}>
+              {weeks.map((week, wi) => (
+                <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: `${GAP}px` }}>
+                  {week.map((day, di) => (
+                    <div
+                      key={di}
+                      title={day ? `${day.date}: ${day.count} commit${day.count !== 1 ? 's' : ''}` : ''}
+                      style={{
+                        width: `${CELL}px`,
+                        height: `${CELL}px`,
+                        background: day ? getColor(day.count) : 'transparent',
+                        borderRadius: '2px',
+                        cursor: day ? 'default' : 'default',
+                      }}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '0.6rem', color: '#475569' }}>Less</span>
+          {['#1e293b', '#166534', '#16a34a', '#22c55e', '#4ade80'].map(c => (
+            <div key={c} style={{ width: `${CELL}px`, height: `${CELL}px`, background: c, borderRadius: '2px' }} />
+          ))}
+          <span style={{ fontSize: '0.6rem', color: '#475569' }}>More</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const [events, setEvents] = useState<ActivityEvent[]>([])
   const [connected, setConnected] = useState(false)
   const [workflowRuns, setWorkflowRuns] = useState<WorkflowRun[]>([])
   const [workflowsLoading, setWorkflowsLoading] = useState(true)
+  const [commitActivity, setCommitActivity] = useState<CommitDay[]>([])
+  const [commitsLoading, setCommitsLoading] = useState(true)
   const { logout, accessToken } = useAuth()
   const navigate = useNavigate()
 
@@ -129,6 +275,16 @@ export default function DashboardPage() {
       .then(res => res.json())
       .then(data => { setWorkflowRuns(data); setWorkflowsLoading(false) })
       .catch(() => setWorkflowsLoading(false))
+  }, [accessToken])
+
+  useEffect(() => {
+    if (!accessToken) return
+    fetch('http://localhost:3000/api/github/commits', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then(res => res.json())
+      .then(data => { setCommitActivity(data); setCommitsLoading(false) })
+      .catch(() => setCommitsLoading(false))
   }, [accessToken])
 
   const handleLogout = async () => { logout(); navigate('/login') }
@@ -179,6 +335,13 @@ export default function DashboardPage() {
                 fontSize: '0.75rem', letterSpacing: '0.1em',
                 textTransform: 'uppercase', color: '#3b82f6', cursor: 'default',
               }}>Dashboard</span>
+              <span
+                onClick={() => navigate('/settings')}
+                style={{
+                  fontSize: '0.75rem', letterSpacing: '0.1em',
+                  textTransform: 'uppercase', color: '#64748b', cursor: 'pointer',
+                }}
+              >Settings</span>
             </nav>
             <button
               onClick={handleLogout}
@@ -229,8 +392,6 @@ export default function DashboardPage() {
         {/* CI/CD Runs + Pipeline Health */}
         {!workflowsLoading && (
           <div style={{ marginTop: '2rem', display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
-
-            {/* Left: Pipeline Health */}
             {workflowRuns.length > 0 && (
               <div style={{ flexShrink: 0 }}>
                 <h2 style={{
@@ -240,8 +401,6 @@ export default function DashboardPage() {
                 <PipelineHealth runs={workflowRuns} />
               </div>
             )}
-
-            {/* Right: CI/CD Runs */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <h2 style={{
                 fontSize: '0.7rem', letterSpacing: '0.15em',
@@ -268,8 +427,12 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
-
           </div>
+        )}
+
+        {/* Commit Heatmap */}
+        {!commitsLoading && commitActivity.length > 0 && (
+          <CommitHeatmap data={commitActivity} />
         )}
 
       </div>

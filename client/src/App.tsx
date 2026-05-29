@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
+import SettingsPage from './pages/SettingsPage'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
             <DashboardPage />
           </ProtectedRoute>
         } />
+        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   )

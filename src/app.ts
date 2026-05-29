@@ -11,6 +11,7 @@ import redis from './lib/redis';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './lib/swagger';
 import githubRouter from './routes/github.routes';
+import repoRouter from './routes/repo.routes'
 
 export const app = express();
 
@@ -20,8 +21,11 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
-
+app.use('/api/repos', repoRouter)
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/github', githubRouter);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -36,9 +40,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api/users', userRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/github', githubRouter);
+
 
 app.get('/health', async (req: Request, res: Response) => {
   const health: Record<string, string> = {
