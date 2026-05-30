@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../lib/AppError';
 import redis from '../lib/redis';
 import prisma from '../lib/prisma';
+import { ApiResponse } from '../types/api'
 
 const CACHE_TTL = 300; // 5 minutes
 
@@ -25,7 +26,7 @@ export async function getWorkflowRuns(req: Request, res: Response, next: NextFun
 
     const cached = await redis.get(cacheKey)
     if (cached) {
-      return res.json(JSON.parse(cached))
+      return res.status(200).json({ status: 'success', data: JSON.parse(cached) } satisfies ApiResponse<typeof runs>)
     }
 
     const response = await fetch(
@@ -60,7 +61,7 @@ export async function getWorkflowRuns(req: Request, res: Response, next: NextFun
 
     await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(runs))
 
-    res.json(runs)
+    res.status(200).json({ status: 'success', data: runs } satisfies ApiResponse<typeof runs>)
   } catch (err) {
     next(err)
   }
@@ -84,7 +85,7 @@ export async function getCommitActivity(req: Request, res: Response, next: NextF
 
     const cached = await redis.get(cacheKey)
     if (cached) {
-      return res.json(JSON.parse(cached))
+      return res.status(200).json({ status: 'success', data: JSON.parse(cached) } satisfies ApiResponse<typeof result>)
     }
 
     const response = await fetch(
@@ -125,7 +126,7 @@ export async function getCommitActivity(req: Request, res: Response, next: NextF
   if (date && countsByDate[date] !== undefined) {
     countsByDate[date]++
   }
-})
+  })
 
     // Return as sorted array
     const result = Object.entries(countsByDate)
@@ -134,7 +135,7 @@ export async function getCommitActivity(req: Request, res: Response, next: NextF
 
     await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(result))
     
-    res.json(result)
+    res.status(200).json({ status: 'success', data: result } satisfies ApiResponse<typeof result>)
   } catch (err) {
     next(err)
   }

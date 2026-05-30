@@ -7,9 +7,11 @@ import { AppError } from '../lib/AppError';
 import { io } from '../lib/socket';
 import { rateLimitByIp } from '../lib/rateLimiter';
 import redis from '../lib/redis';
+import { ApiResponse } from '../types/api'
+import logger from '../lib/logger'
 
 export async function register(req: Request, res: Response, next: NextFunction) {
-  console.log('register controller hit')
+  logger.debug('register controller hit')
   try {
     await rateLimitByIp(req.ip ?? 'unknown', 'register');
     const { email, password, name } = req.body
@@ -31,15 +33,18 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       }
     })
 
-    console.log('about to emit')
+    
     io.emit('activity', {
       type: 'user:registered',
       message: `${name || email} joined`,
       timestamp: new Date().toISOString(),
     })
-    console.log('emitted, clients:', io.sockets.sockets.size)
+    logger.debug({ clients: io.sockets.sockets.size }, 'activity emitted: user registered')
 
-    res.status(201).json({ status: 'success', data: { user, accessToken } })
+    res.status(201).json({ 
+    status: 'success', 
+    data: { user, accessToken } 
+  } satisfies ApiResponse<{ user: typeof user; accessToken: string }>)
   } catch (err: unknown) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       return next(new AppError(409, 'Email already in use'))
@@ -50,7 +55,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
 
 export async function login(req: Request, res: Response, next: NextFunction) {
   const { email, password } = req.body
-  console.log(req.ip)
+  logger.debug({ ip: req.ip }, 'login attempt')
   try {
     await rateLimitByIp(req.ip ?? 'unknown', 'login');
     const user = await prisma.user.findUnique({ where: { email } })
@@ -91,7 +96,10 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       maxAge: 7 * 24 * 60 * 60 * 1000
     })
 
-    res.status(200).json({ status: 'success', data: { user: userWithoutPassword, accessToken } })
+    res.status(200).json({ 
+    status: 'success', 
+    data: { user: userWithoutPassword, accessToken } 
+  } satisfies ApiResponse<{ user: typeof userWithoutPassword; accessToken: string }>)
   } catch (err: unknown) {
     next(err)
   }
@@ -165,7 +173,11 @@ export async function getMe(req: Request, res: Response, next: NextFunction) {
 
     const cached = await redis.get(`user:${userId}`);
     if (cached) {
-      return res.json({ data: JSON.parse(cached), source: 'cache' });
+      logger.debug({ userId }, 'cache hit for user')
+    return res.status(200).json({ 
+      status: 'success', 
+      data: JSON.parse(cached) 
+    } satisfies ApiResponse<typeof user>)
     }
 
     const user = await prisma.user.findUniqueOrThrow({
@@ -175,7 +187,10 @@ export async function getMe(req: Request, res: Response, next: NextFunction) {
 
     await redis.set(`user:${userId}`, JSON.stringify(user), 'EX', 300);
 
-    res.json({ data: user, source: 'db' });
+    res.status(200).json({ 
+    status: 'success', 
+    data: user 
+  } satisfies ApiResponse<typeof user>)
   } catch (err: unknown) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
       return next(new AppError(404, 'User not found'));

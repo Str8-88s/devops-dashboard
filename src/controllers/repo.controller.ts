@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import  prisma  from '../lib/prisma'
 import { AppError } from '../lib/AppError'
+import { ApiResponse } from '../types/api'
 
 export async function getTrackedRepo(req: Request, res: Response, next: NextFunction) {
   try {
@@ -10,7 +11,7 @@ export async function getTrackedRepo(req: Request, res: Response, next: NextFunc
       where: { userId },
     })
 
-    res.json(repo ?? null)
+    res.status(200).json({ status: 'success', data: repo ?? null } satisfies ApiResponse<typeof repo>)
   } catch (err) {
     next(err)
   }
@@ -32,7 +33,7 @@ export async function upsertTrackedRepo(req: Request, res: Response, next: NextF
       create: { userId, owner, repo, accessToken: accessToken ?? null },
     })
 
-    res.json(tracked)
+    res.status(200).json({ status: 'success', data: tracked } satisfies ApiResponse<typeof tracked>)
   } catch (err) {
     next(err)
   }
@@ -47,7 +48,7 @@ export async function deleteTrackedRepo(req: Request, res: Response, next: NextF
 
     await prisma.trackedRepo.delete({ where: { userId } })
 
-    res.json({ message: 'Tracked repo removed' })
+    res.status(200).json({ status: 'success', message: 'Tracked repo removed' } satisfies ApiResponse<never>)
   } catch (err) {
     next(err)
   }

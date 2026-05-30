@@ -5,6 +5,7 @@ import { Prisma } from '../generated/prisma/client'
 import bcrypt from 'bcrypt'
 import { AppError } from '../lib/AppError';
 import redis from '../lib/redis';
+import { ApiResponse } from '../types/api'
 
     export async function createUser(req: Request, res: Response, next: NextFunction) {
     const input = req.body as CreateUserInput
@@ -38,7 +39,7 @@ import redis from '../lib/redis';
     try {
         const { id } = req.params as { id: string };
         const user = await prisma.user.findUniqueOrThrow({ where: { id } });
-        res.json({ data: user });
+        res.status(200).json({ status: 'success', data: user } satisfies ApiResponse<typeof user>)
     } catch (err: unknown) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
         return next(new AppError(404, 'User not found'));
@@ -64,7 +65,7 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
 
         try { await redis.del(`user:${id}`); } catch {}
 
-        res.json({ data: user });
+        res.status(200).json({ status: 'success', data: user } satisfies ApiResponse<typeof user>)
     } catch (err: unknown) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
             return next(new AppError(404, 'User not found'));
@@ -92,9 +93,9 @@ export async function getMe(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = res.locals.userId as string;
 
-    const cached = await redis.get(`user:${userId}`);
+    const cached = await redis.get(`user:${userId}`)
     if (cached) {
-      return res.json({ data: JSON.parse(cached) });
+      return res.status(200).json({ status: 'success', data: JSON.parse(cached) } satisfies ApiResponse<typeof user>)
     }
 
     const user = await prisma.user.findUniqueOrThrow({
@@ -102,9 +103,9 @@ export async function getMe(req: Request, res: Response, next: NextFunction) {
       select: { id: true, email: true, name: true, createdAt: true }
     });
 
-    await redis.set(`user:${userId}`, JSON.stringify(user), 'EX', 300);
+    await redis.set(`user:${userId}`, JSON.stringify(user), 'EX', 300)
 
-    res.json({ data: user });
+    res.status(200).json({ status: 'success', data: user } satisfies ApiResponse<typeof user>)
   } catch (err: unknown) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
       return next(new AppError(404, 'User not found'));
