@@ -273,7 +273,7 @@ export default function DashboardPage() {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then(res => res.json())
-      .then(data => { setWorkflowRuns(data); setWorkflowsLoading(false) })
+      .then(data => { setWorkflowRuns(data.data); setWorkflowsLoading(false) })
       .catch(() => setWorkflowsLoading(false))
   }, [accessToken])
 
@@ -283,7 +283,7 @@ export default function DashboardPage() {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then(res => res.json())
-      .then(data => { setCommitActivity(data); setCommitsLoading(false) })
+      .then(data => { setCommitActivity(data.data); setCommitsLoading(false) })
       .catch(() => setCommitsLoading(false))
   }, [accessToken])
 
