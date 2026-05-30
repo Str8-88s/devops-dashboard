@@ -24,8 +24,8 @@ export default function SettingsPage() {
       .then(res => res.json())
       .then(data => {
         if (data) {
-          setOwner(data.owner ?? '')
-          setRepo(data.repo ?? '')
+          setOwner(data.data.owner ?? '')
+          setRepo(data.data.repo ?? '')
         }
         setLoading(false)
       })

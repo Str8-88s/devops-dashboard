@@ -100,26 +100,37 @@
 
 ## Dashboard Code Work
 
+### src/types/api.ts — Added
+- New shared `ApiResponse<T>` interface — `{ status: 'success' | 'error', data?: T, message?: string }`
+- Used across all controllers as the single source of truth for response shape
+
 ### auth.controller.ts — Complete
-- Applied `ApiResponse<T>` wrapper to all responses
+- Applied `ApiResponse<T>` wrapper with `satisfies` to all responses
 - Replaced all `console.log` with `logger.debug` / `logger.info`
 - Moved `source: 'cache'` from response body to logger
 
 ### user.controller.ts — Complete
 - Applied `ApiResponse<T>` wrapper to `getUserById`, `updateUser`, `getMe`
-- `createUser` was already correct, `deleteUser` returns 204 with no body (correct)
+- `createUser` was already correct
+- `deleteUser` returns 204 with no body — correct, no wrapper needed
 
 ### github.controller.ts — Complete
 - Applied `ApiResponse<T>` wrapper to `getWorkflowRuns` and `getCommitActivity`
 
 ### repo.controller.ts — Complete
-- Applied `ApiResponse<T>` wrapper to `getTrackedRepo`, `upsertTrackedRepo`, `deleteTrackedRepo`
-
-### src/types/api.ts — Added
-- New shared `ApiResponse<T>` interface used across all controllers
+- Applied `ApiResponse<T>` wrapper to `getTrackedRepo`, `upsertTrackedRepo`
+- `deleteTrackedRepo` uses `message` field on `ApiResponse<never>`
 
 ### DashboardPage.tsx — Fixed
 - Updated workflow runs and commit activity fetch calls to unwrap `.data` from response
+
+### SettingsPage.tsx — Fixed
+- Updated `GET /api/repos` fetch to unwrap `.data` from response
+- `handleSave` and `handleDelete` unaffected — only check `res.ok`
+
+### Lesson Learned
+- Changing API response shape requires updating all frontend fetch calls that consume those endpoints
+- `satisfies` keyword is the correct way to apply type checking to `res.json()`
 
 ---
 
