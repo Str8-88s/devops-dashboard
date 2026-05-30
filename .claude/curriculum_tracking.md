@@ -100,12 +100,26 @@
 
 ## Dashboard Code Work
 
-### auth.controller.ts — Identified Improvements
-1. **Response shape inconsistency** — `register`/`login` use `{ status, data }`, `getMe` uses `{ data, source }`. Apply `ApiResponse<T>` wrapper consistently across all endpoints.
-2. **`console.log` in production code** — replace with `logger.debug` / `logger.info`. Logger already exists in project (`src/lib/logger.ts`).
-3. **`source: 'cache'`** — move to `logger.debug()` call, remove from response body.
+### auth.controller.ts — Complete
+- Applied `ApiResponse<T>` wrapper to all responses
+- Replaced all `console.log` with `logger.debug` / `logger.info`
+- Moved `source: 'cache'` from response body to logger
 
-**Status:** Identified, not yet implemented.
+### user.controller.ts — Complete
+- Applied `ApiResponse<T>` wrapper to `getUserById`, `updateUser`, `getMe`
+- `createUser` was already correct, `deleteUser` returns 204 with no body (correct)
+
+### github.controller.ts — Complete
+- Applied `ApiResponse<T>` wrapper to `getWorkflowRuns` and `getCommitActivity`
+
+### repo.controller.ts — Complete
+- Applied `ApiResponse<T>` wrapper to `getTrackedRepo`, `upsertTrackedRepo`, `deleteTrackedRepo`
+
+### src/types/api.ts — Added
+- New shared `ApiResponse<T>` interface used across all controllers
+
+### DashboardPage.tsx — Fixed
+- Updated workflow runs and commit activity fetch calls to unwrap `.data` from response
 
 ---
 
