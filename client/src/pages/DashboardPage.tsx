@@ -257,35 +257,35 @@ export default function DashboardPage() {
   const { logout, accessToken } = useAuth()
   const navigate = useNavigate()
 
-  useEffect(() => {
-    socket = io('http://localhost:3000', { withCredentials: true })
-    socket.on('connect', () => setConnected(true))
-    socket.on('disconnect', () => setConnected(false))
-    socket.on('activity', (event: Omit<ActivityEvent, 'id'>) => {
-      setEvents(prev => [{ ...event, id: crypto.randomUUID() }, ...prev])
-    })
-    return () => { socket?.disconnect(); socket = null }
-  }, [])
+useEffect(() => {
+  socket = io(import.meta.env.VITE_API_URL || '', { withCredentials: true })
+  socket.on('connect', () => setConnected(true))
+  socket.on('disconnect', () => setConnected(false))
+  socket.on('activity', (event: Omit<ActivityEvent, 'id'>) => {
+    setEvents(prev => [{ ...event, id: crypto.randomUUID() }, ...prev])
+  })
+  return () => { socket?.disconnect(); socket = null }
+}, [])
 
-  useEffect(() => {
-    if (!accessToken) return
-    fetch('http://localhost:3000/api/github/workflows', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then(res => res.json())
-      .then(data => { setWorkflowRuns(data.data); setWorkflowsLoading(false) })
-      .catch(() => setWorkflowsLoading(false))
-  }, [accessToken])
+useEffect(() => {
+  if (!accessToken) return
+  fetch('/api/github/workflows', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+    .then(res => res.json())
+    .then(data => { setWorkflowRuns(data); setWorkflowsLoading(false) })
+    .catch(() => setWorkflowsLoading(false))
+}, [accessToken])
 
-  useEffect(() => {
-    if (!accessToken) return
-    fetch('http://localhost:3000/api/github/commits', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then(res => res.json())
-      .then(data => { setCommitActivity(data.data); setCommitsLoading(false) })
-      .catch(() => setCommitsLoading(false))
-  }, [accessToken])
+useEffect(() => {
+  if (!accessToken) return
+  fetch('/api/github/commits', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+    .then(res => res.json())
+    .then(data => { setCommitActivity(data); setCommitsLoading(false) })
+    .catch(() => setCommitsLoading(false))
+}, [accessToken])
 
   const handleLogout = async () => { logout(); navigate('/login') }
 

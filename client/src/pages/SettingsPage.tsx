@@ -15,7 +15,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!authToken) return
-   fetch('http://localhost:3000/api/repos', {
+   fetch('/api/repos', {
       headers: { 
         Authorization: `Bearer ${authToken}`,
         'Cache-Control': 'no-cache',
@@ -40,7 +40,7 @@ export default function SettingsPage() {
     setSaving(true)
     setMessage(null)
     try {
-      const res = await fetch('http://localhost:3000/api/repos', {
+      const res = await fetch('/api/repos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,7 +62,7 @@ export default function SettingsPage() {
     setDeleting(true)
     setMessage(null)
     try {
-      const res = await fetch('http://localhost:3000/api/repos', {
+      const res = await fetch('/api/repos', {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${authToken}` },
       })
