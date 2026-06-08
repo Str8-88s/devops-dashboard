@@ -190,7 +190,11 @@ export default function DashboardPage() {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then(res => res.json())
-      .then(data => { setWorkflowRuns(Array.isArray(data) ? data : []); setWorkflowsLoading(false) })
+      .then(data => {
+        const runs = data?.data ?? data
+        setWorkflowRuns(Array.isArray(runs) ? runs : [])
+        setWorkflowsLoading(false)
+      })
       .catch(() => setWorkflowsLoading(false))
   }, [accessToken])
 
@@ -200,7 +204,11 @@ export default function DashboardPage() {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then(res => res.json())
-      .then(data => { setCommitActivity(Array.isArray(data) ? data : []); setCommitsLoading(false) })
+      .then(data => {
+        const commits = data?.data ?? data
+        setCommitActivity(Array.isArray(commits) ? commits : [])
+        setCommitsLoading(false)
+      })
       .catch(() => setCommitsLoading(false))
   }, [accessToken])
 
