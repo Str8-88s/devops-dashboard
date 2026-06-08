@@ -71,7 +71,7 @@ app.get('/health', async (req: Request, res: Response) => {
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // Catch-all — return index.html for any non-API route
-app.get('*', (_req, res) => {
+app.get('/{*path}', (_req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
 });
 
