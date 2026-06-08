@@ -40,7 +40,9 @@ app.use((req, res, next) => {
   next();
 });
 
-
+app.get('/', (_req, res) => {
+  res.redirect('/login');
+});
 
 app.get('/health', async (req: Request, res: Response) => {
   const health: Record<string, string> = {
