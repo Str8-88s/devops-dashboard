@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
+import path from 'path';
 import userRoutes from './routes/user.routes';
 import authRoutes from './routes/auth.routes';
 import cors from 'cors';
@@ -16,7 +17,7 @@ import repoRouter from './routes/repo.routes'
 export const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
 }));
 app.use(express.json());
@@ -38,10 +39,6 @@ app.use((req, res, next) => {
     });
   });
   next();
-});
-
-app.get('/', (_req, res) => {
-  res.redirect('/login');
 });
 
 app.get('/health', async (req: Request, res: Response) => {
@@ -68,6 +65,14 @@ app.get('/health', async (req: Request, res: Response) => {
 
   const statusCode = health.status === 'degraded' ? 503 : 200;
   res.status(statusCode).json(health);
+});
+
+// Serve React static build
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// Catch-all — return index.html for any non-API route
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
 });
 
 app.use(errorHandler);
