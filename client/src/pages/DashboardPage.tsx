@@ -258,22 +258,15 @@ export default function DashboardPage() {
   const navigate = useNavigate()
 
 useEffect(() => {
-  socket = io(import.meta.env.VITE_API_URL || '', { withCredentials: true })
-  socket.on('connect', () => setConnected(true))
-  socket.on('disconnect', () => setConnected(false))
-  socket.on('activity', (event: Omit<ActivityEvent, 'id'>) => {
-    setEvents(prev => [{ ...event, id: crypto.randomUUID() }, ...prev])
-  })
-  return () => { socket?.disconnect(); socket = null }
-}, [])
-
-useEffect(() => {
   if (!accessToken) return
   fetch('/api/github/workflows', {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
     .then(res => res.json())
-    .then(data => { setWorkflowRuns(data); setWorkflowsLoading(false) })
+    .then(data => {
+      setWorkflowRuns(Array.isArray(data) ? data : [])
+      setWorkflowsLoading(false)
+    })
     .catch(() => setWorkflowsLoading(false))
 }, [accessToken])
 
@@ -283,10 +276,12 @@ useEffect(() => {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
     .then(res => res.json())
-    .then(data => { setCommitActivity(data); setCommitsLoading(false) })
+    .then(data => {
+      setCommitActivity(Array.isArray(data) ? data : [])
+      setCommitsLoading(false)
+    })
     .catch(() => setCommitsLoading(false))
 }, [accessToken])
-
   const handleLogout = async () => { logout(); navigate('/login') }
 
   return (
