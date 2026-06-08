@@ -469,3 +469,38 @@ Decision: PAT storage
 Choice: Plaintext with TODO comment
 Alternatives considered: AES-256 with env key, bcrypt (unsuitable — one-way)
 Why: Encryption requires key management strategy. Flagging explicitly is more honest than half-implemented encryption. TODO ensures it's not forgotten before any real production use.
+
+---
+
+Decision: Frontend serving strategy
+Choice: Express static middleware + catch-all route serving React build
+Alternatives considered: Separate Vercel/Netlify deployment for frontend
+Why: Single deployment unit — one Cloud Run service serves both API and frontend. Simpler ops, no CORS complexity between frontend and backend hosts.
+
+---
+
+Decision: Catch-all route syntax
+Choice: `app.get('/{*path}', ...)` over `app.get('*', ...)`
+Alternatives considered: `app.get('*', ...)` (Express 4 style)
+Why: path-to-regexp v8 (shipped with newer Express versions) removed bare wildcard support. `/{*path}` is the correct v8 syntax.
+
+---
+
+Decision: Client URL handling
+Choice: Relative paths for API calls + VITE_API_URL env var for Socket.io only
+Alternatives considered: VITE_API_URL for all calls, hardcoded localhost
+Why: Relative paths work in both dev (Vite proxies to localhost:3000) and production (same origin). Socket.io requires a full URL for the connection, so VITE_API_URL is only needed there.
+
+---
+
+Decision: Supabase migration workflow
+Choice: Temporarily swap DATABASE_URL to Supabase session pooler URL, run prisma migrate deploy, swap back
+Alternatives considered: Separate migration script, prisma.config.ts env switching
+Why: Prisma reads DATABASE_URL specifically — it's hardcoded in prisma.config.ts. Swapping the env var is the simplest one-time solution. Worth revisiting if migrations become frequent.
+
+---
+
+Decision: Login/Register page styling
+Choice: Inline styles matching dashboard aesthetic (dark theme, monospace font, same color palette)
+Alternatives considered: Unstyled HTML form (original state)
+Why: Consistency with the dashboard. First impression for portfolio reviewers hitting the live URL.
