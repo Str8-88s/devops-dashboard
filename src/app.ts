@@ -13,6 +13,7 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './lib/swagger';
 import githubRouter from './routes/github.routes';
 import repoRouter from './routes/repo.routes'
+import agentRouter from './routes/agent.routes';
 
 export const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/github', githubRouter);
+app.use('/api/agent', agentRouter);
 
 app.use((req, res, next) => {
   const start = Date.now();
