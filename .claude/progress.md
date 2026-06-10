@@ -3,8 +3,8 @@
 ## Current Status
 
 **Phase:** Phase 4 — Dashboard Enhancements
-**Current Week:** Week 14 (complete)
-**Last Updated:** June 8, 2026
+**Current Week:** Week 15 (in progress)
+**Last Updated:** June 9, 2026
 **Deployment Strategy:** Cloud Run (GCP) + Supabase (PostgreSQL) + Upstash (Redis) — zero cost stack
 **Production URL:** https://devops-dashboard-985792054692.us-east1.run.app
 **Swagger UI:** https://devops-dashboard-985792054692.us-east1.run.app/api/docs
@@ -36,6 +36,7 @@
 - [x] **Week 13:** Pipeline health donut widget
 - [x] **Week 14:** Per-user repo config + commit activity heatmap widget
 - [x] **Week 14:** React frontend served from Express, full production deployment
+- [ ] **Week 15:** Claude AI agent — chat window, tool definitions, agent loop
 
 ---
 
@@ -123,6 +124,14 @@
 - Full production dashboard verified — pipeline health, CI/CD runs, commit heatmap all loading with real data
 - **Commits:** `feat: serve React frontend from Express`, `fix: update catch-all route`, `fix: remove client from dockerignore`, `fix: replace hardcoded localhost URLs`, `fix: unwrap ApiResponse wrapper for GitHub endpoints`
 
+### Session 21 — June 9, 2026
+- Planned Claude AI agent feature — chat window embedded in dashboard
+- Architecture decided: floating chat window (bottom-right), authenticated POST /api/agent/chat, 4 read-only tools
+- Decided to use own Anthropic API key (Option A) — portfolio traffic too low to warrant user-supplied keys
+- Installed `@anthropic-ai/sdk` in dashboard repo
+- Created `docs/agent.md` as feature documentation
+- **Next session:** build agent.controller.ts, agent.routes.ts, ChatWindow.tsx
+
 ---
 
 ## Technical Decisions Log
@@ -149,6 +158,9 @@
 | Jun 8 | Catch-all route | `/{*path}` over `*` | path-to-regexp v8 removed bare wildcard support |
 | Jun 8 | Client URLs | Relative paths + VITE_API_URL for Socket.io | Works in both dev and production without hardcoding |
 | Jun 8 | Supabase migration | `prisma migrate deploy` with swapped DATABASE_URL | Prisma reads DATABASE_URL specifically; swap to prod URL, run, swap back |
+| Jun 9 | Agent UI | Floating chat window over full /chat page | Tool feel, accessible from any page, no navigation required |
+| Jun 9 | Agent API key | Own Anthropic key (Option A) | Portfolio traffic too low to warrant complexity of user-supplied keys |
+| Jun 9 | Agent scope | Read-only tools only | Clean portfolio story; write actions add UX/trust complexity with no demo value |
 
 ---
 
@@ -177,6 +189,7 @@ devops-dashboard/
 │   │   ├── user.test.ts
 │   │   └── setup.ts
 │   ├── controllers/
+│   │   ├── agent.controller.ts       ← next session
 │   │   ├── auth.controller.ts
 │   │   ├── github.controller.ts
 │   │   ├── repo.controller.ts
@@ -196,6 +209,7 @@ devops-dashboard/
 │   │   ├── errorHandler.ts
 │   │   └── validate.ts
 │   ├── routes/
+│   │   ├── agent.routes.ts           ← next session
 │   │   ├── auth.routes.ts
 │   │   ├── github.routes.ts
 │   │   ├── repo.routes.ts
@@ -210,6 +224,7 @@ devops-dashboard/
 ├── client/
 │   ├── src/
 │   │   ├── components/
+│   │   │   ├── ChatWindow.tsx        ← next session
 │   │   │   └── ProtectedRoute.tsx
 │   │   ├── lib/
 │   │   │   ├── authContext.tsx
@@ -228,6 +243,7 @@ devops-dashboard/
 │   └── schema.prisma
 ├── docs/
 │   ├── adr/
+│   ├── agent.md                      ← created this session
 │   ├── blog-post.md
 │   └── decisions.md
 ├── .claude/
@@ -245,7 +261,13 @@ devops-dashboard/
 
 ## Outstanding / Next Sessions
 
-1. **Blog post review** — read `docs/blog-post.md` carefully before publishing
-2. **Cleanup** — remove `.claude/instructions.md` from this repo once blog post is published
-3. **Future widget ideas** — repo stats card (stars, forks, open issues), success rate trend over time
+1. **Week 15 — Agent feature:**
+   - `src/controllers/agent.controller.ts` — agent loop + 4 tool definitions
+   - `src/routes/agent.routes.ts` — authenticated POST /api/agent/chat
+   - Register route in `app.ts`
+   - `client/src/components/ChatWindow.tsx` — floating chat window
+   - Wire ChatWindow into `DashboardPage.tsx`
+   - Add `ANTHROPIC_API_KEY` to Cloud Run env vars on deploy
+2. **Blog post review** — read `docs/blog-post.md` carefully before publishing
+3. **Cleanup** — remove `.claude/instructions.md` from this repo once blog post is published
 4. **PAT encryption** — key management strategy needed before any real multi-user production use

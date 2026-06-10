@@ -504,3 +504,38 @@ Decision: Login/Register page styling
 Choice: Inline styles matching dashboard aesthetic (dark theme, monospace font, same color palette)
 Alternatives considered: Unstyled HTML form (original state)
 Why: Consistency with the dashboard. First impression for portfolio reviewers hitting the live URL.
+
+---
+
+Decision: Agent UI placement
+Choice: Floating chat window (bottom-right, toggle open/close) over full /chat page
+Alternatives considered: Dedicated /chat route
+Why: Feels like a tool, not a destination. Accessible from any dashboard page without navigation. Full page makes sense only if conversation history is long-lived and central to UX — it isn't here.
+
+---
+
+Decision: Agent API key ownership
+Choice: Own Anthropic API key (server-side, stored in .env / Cloud Run env vars)
+Alternatives considered: User-supplied key stored in Settings, per-user rate limiting with own key
+Why: Portfolio traffic is negligible — cost risk is near zero. User-supplied key adds friction to the demo and complexity to the implementation with no real benefit at this scale.
+
+---
+
+Decision: Agent tool scope
+Choice: Read-only tools only
+Alternatives considered: Write actions (trigger workflow, update repo config)
+Why: Read-only is a clean, defensible portfolio story. Write actions add confirmation UX complexity, error handling surface area, and trust concerns without adding demo value.
+
+---
+
+Decision: Agent SDK
+Choice: @anthropic-ai/sdk (TypeScript)
+Alternatives considered: Raw fetch to Anthropic API
+Why: First-class TypeScript types, tool use handled cleanly, same SDK pattern used in the Python GitHub agent — demonstrates consistent AI integration knowledge across languages.
+
+---
+
+Decision: Agent conversation state
+Choice: Client sends full conversation history with each request (stateless backend)
+Alternatives considered: Server-side session storage for conversation history
+Why: Consistent with how Claude API works — no memory between calls. Keeps the backend stateless, no new storage layer needed. Same pattern used in the GitHub agent.
