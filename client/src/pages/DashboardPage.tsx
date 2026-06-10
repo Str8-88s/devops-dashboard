@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { io, Socket } from 'socket.io-client'
 import { useAuth } from '../lib/useAuth'
+import ChatWindow from '../components/ChatWindow';
 
 interface WorkflowRun {
   id: number
@@ -300,6 +301,7 @@ export default function DashboardPage() {
                   </a>
                 ))}
               </div>
+              
             </div>
           </div>
         )}
@@ -307,8 +309,9 @@ export default function DashboardPage() {
         {!commitsLoading && commitActivity.length > 0 && (
           <CommitHeatmap data={commitActivity} />
         )}
-
+        
       </div>
+      <ChatWindow />
     </div>
   )
 }
