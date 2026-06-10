@@ -124,13 +124,18 @@
 - Full production dashboard verified — pipeline health, CI/CD runs, commit heatmap all loading with real data
 - **Commits:** `feat: serve React frontend from Express`, `fix: update catch-all route`, `fix: remove client from dockerignore`, `fix: replace hardcoded localhost URLs`, `fix: unwrap ApiResponse wrapper for GitHub endpoints`
 
-### Session 21 — June 9, 2026
-- Planned Claude AI agent feature — chat window embedded in dashboard
-- Architecture decided: floating chat window (bottom-right), authenticated POST /api/agent/chat, 4 read-only tools
-- Decided to use own Anthropic API key (Option A) — portfolio traffic too low to warrant user-supplied keys
-- Installed `@anthropic-ai/sdk` in dashboard repo
-- Created `docs/agent.md` as feature documentation
-- **Next session:** build agent.controller.ts, agent.routes.ts, ChatWindow.tsx
+### Session 21 — June 9-10, 2026
+- Planned and built Claude AI agent feature end to end
+- Architecture: floating chat window (bottom-right), stateless POST /api/agent/chat, 4 read-only tools
+- Installed @anthropic-ai/sdk
+- Built agent.controller.ts — agent loop + 4 tool definitions (get_pipeline_health, get_commit_activity, get_repo_config, get_system_health)
+- Built agent.routes.ts — authenticated POST /api/agent/chat
+- Registered agent route in app.ts
+- Built ChatWindow.tsx — floating chat window wired into DashboardPage.tsx
+- Added ANTHROPIC_API_KEY to Cloud Run env vars
+- Restored all Cloud Run env vars after --env-vars-file wiped them (lesson: use console for env var changes)
+- Agent verified working in production
+- **Commits:** `feat: Claude agent backend`, `feat: Claude agent chat window`
 
 ---
 
